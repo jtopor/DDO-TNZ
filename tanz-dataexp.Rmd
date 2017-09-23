@@ -1,0 +1,318 @@
+---
+title: "Untitled"
+author: "James Topor"
+date: "September 22, 2017"
+output: html_document
+---
+```{r}
+library(knitr)
+library(tidyr)
+library(dplyr)
+```
+
+```{r}
+# load tanzania training data file
+tanz <- read.csv("https://raw.githubusercontent.com/jtopor/DDO-TNZ/master/Tanz-Training-Data.csv", header = TRUE, stringsAsFactors = FALSE)
+
+# count distinct items
+length(unique(tanz$id))
+
+summary(tanz)
+```
+
+Determine how many rows have complete cases and how many have NA's:
+
+- 53281 complete cases
+
+- 6119 rows with NA's
+
+- 10.3% of rows have NA's
+
+```{r}
+# count number of rows with no NA's = 53281
+(c.cases <- sum(complete.cases(tanz)) )
+
+# now calculate number of rows with NA's = 6119
+(na.cases <- nrow(tanz) - c.cases)
+
+na.cases / nrow(tanz)
+
+```
+
+```{r}
+
+# Calc total number of wells for each distinct variable value. Results can be
+# used for bar plots + for determining whether categorical variables can feasibly be 
+# converted to a factor
+
+# count distinct funder = 1898, 3635 NA
+length(unique(tanz$funder))
+
+# calc number of wells per funder
+c_funders <- arrange(summarise(group_by(tanz, funder), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_funders, n = 10)
+
+# -------------------------------
+# count distinct installer = 2146, 3655 NA
+length(unique(tanz$installer))
+
+# calc number of wells per installer
+c_installers <- arrange(summarise(group_by(tanz, installer), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_installers, n = 10)
+
+# -------------------------------
+# count distinct wpt_name = 37400, 3563 = none (NA)
+length(unique(tanz$wpt_name))
+
+# calc number of wells per wpt_name
+c_wptn <- arrange(summarise(group_by(tanz, wpt_name), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_wptn, n = 10)
+
+# -------------------------------
+# count distinct basin = 9
+length(unique(tanz$basin))
+
+# calc number of wells per basin
+c_basin <- arrange(summarise(group_by(tanz, basin), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_basin, n = 10)
+
+
+# -------------------------------
+# count distinct subvillage = 19288, 371 NA's
+length(unique(tanz$subvillage))
+
+# calc number of wells per subvillage
+c_subv <- arrange(summarise(group_by(tanz, subvillage), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_subv, n = 10)
+
+# -------------------------------
+# count distinct region = 21
+length(unique(tanz$region))
+
+# calc number of wells per region
+c_region <- arrange(summarise(group_by(tanz, region), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_region, n = 10)
+
+# -------------------------------
+# count distinct district_code = 20
+length(unique(tanz$district_code))
+
+# calc number of wells per basin
+c_distc <- arrange(summarise(group_by(tanz, district_code), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_distc, n = 10)
+
+# -------------------------------
+# count distinct lga = 125
+length(unique(tanz$lga))
+
+# calc number of wells per lga
+c_lga <- arrange(summarise(group_by(tanz, lga), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_lga, n = 10)
+
+
+# -------------------------------
+# count distinct ward = 2092
+length(unique(tanz$ward))
+
+# calc number of wells per ward
+c_ward <- arrange(summarise(group_by(tanz, ward), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_ward, n = 10)
+
+# -------------------------------
+# count distinct recorded_by = 1
+length(unique(tanz$recorded_by))
+
+
+# -------------------------------
+# count distinct scheme_management = 13, 3877 NA's
+length(unique(tanz$scheme_management))
+
+# calc number of wells per scheme_management
+c_scheme_m <- arrange(summarise(group_by(tanz, scheme_management), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_scheme_m, n = 10)
+
+
+# -------------------------------
+# count distinct scheme_name = 2697, 28,166 NA's
+length(unique(tanz$scheme_name))
+
+# calc number of wells per scheme_name
+c_scheme_n <- arrange(summarise(group_by(tanz, scheme_name), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_scheme_n, n = 10)
+
+
+# -------------------------------
+# count distinct construction_year = 55, 20,709 NA's
+length(unique(tanz$construction_year))
+
+# calc number of wells per construction_year
+c_const_y <- arrange(summarise(group_by(tanz, construction_year), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_const_y, n = 10)
+
+
+# -------------------------------
+# count distinct extraction_type = 18
+length(unique(tanz$extraction_type))
+
+# calc number of wells per extraction_type
+c_extract_t <- arrange(summarise(group_by(tanz, extraction_type), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_extract_t, n = 10)
+
+
+# -------------------------------
+# count distinct extraction_type_class = 7, 20,709 NA's
+length(unique(tanz$extraction_type_class))
+
+# calc number of wells per extraction_type_class
+c_extract_t_c <- arrange(summarise(group_by(tanz, extraction_type_class), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_extract_t_c, n = 10)
+
+# -------------------------------
+# count distinct management = 12
+length(unique(tanz$management))
+
+# calc number of wells per management
+c_mgmt <- arrange(summarise(group_by(tanz, management), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_mgmt, n = 10)
+
+# -------------------------------
+# count distinct management_group = 5
+length(unique(tanz$management_group))
+
+# calc number of wells per management_group
+c_mgmt_grp <- arrange(summarise(group_by(tanz, management_group), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_mgmt_grp, n = 10)
+
+
+# -------------------------------
+# count distinct payment = 7
+length(unique(tanz$payment))
+
+# calc number of wells per payment
+c_paymt <- arrange(summarise(group_by(tanz, payment), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_paymt, n = 10)
+
+
+# -------------------------------
+# count distinct payment_type = 7; on failure appears to replace "pay when scheme fails" from payment variable
+length(unique(tanz$payment_type))
+
+# calc number of wells per payment_type
+c_paymt_t <- arrange(summarise(group_by(tanz, payment_type), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_paymt_t, n = 10)
+
+# -------------------------------
+# count distinct water_quality = 8
+length(unique(tanz$water_quality))
+
+# calc number of wells per water_quality
+c_waterq <- arrange(summarise(group_by(tanz, water_quality), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_waterq, n = 10)
+
+
+# -------------------------------
+# count distinct quality_group = 6
+length(unique(tanz$quality_group))
+
+# calc number of wells per water_quality
+c_qualityg <- arrange(summarise(group_by(tanz, quality_group), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_qualityg, n = 10)
+
+# -------------------------------
+# count distinct quantity = 5
+length(unique(tanz$quantity))
+
+# calc number of wells per quantity
+c_quantity <- arrange(summarise(group_by(tanz, quantity), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_quantity, n = 10)
+
+# -------------------------------
+# count distinct quantity_group = 5; appears to be identical to "quantity" variable
+length(unique(tanz$quantity_group))
+
+# calc number of wells per quantity_group
+c_quantityg <- arrange(summarise(group_by(tanz, quantity_group), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_quantityg, n = 10)
+
+# -------------------------------
+# count distinct source = 10
+length(unique(tanz$source))
+
+# calc number of wells per source
+c_source <- arrange(summarise(group_by(tanz, source), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_source, n = 10)
+
+
+# -------------------------------
+# count distinct source_type = 10
+length(unique(tanz$source))
+
+# calc number of wells per source_type
+c_source_t <- arrange(summarise(group_by(tanz, source_type), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_source_t, n = 10)
+
+# -------------------------------
+# count distinct source_class = 3
+length(unique(tanz$source_class))
+
+# calc number of wells per source_class
+c_source_c <- arrange(summarise(group_by(tanz, source_class), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_source_c, n = 10)
+
+
+# -------------------------------
+# count distinct waterpoint_type = 7
+length(unique(tanz$waterpoint_type))
+
+# calc number of wells per waterpoint_type
+c_waterp_t <- arrange(summarise(group_by(tanz, waterpoint_type), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_waterp_t, n = 10)
+
+# -------------------------------
+# count distinct waterpoint_type_group = 6
+length(unique(tanz$waterpoint_type_group))
+
+# calc number of wells per waterpoint_type_group
+c_waterp_t_g <- arrange(summarise(group_by(tanz, waterpoint_type_group), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_waterp_t_g, n = 10)
+```
+
+
+# Convert categoricals with strings to factors (where feasible)
+
+```{r}
+# tanz$basin <- factor(tanz$basin)
+# etc..
+
+```
+
+Now generate summary data for data set
+```{r}
+summary(tanz)

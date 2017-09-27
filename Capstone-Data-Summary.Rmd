@@ -1,0 +1,72 @@
+---
+title: "Capstone Prelim Data Exploration Summary"
+author: "James Topor"
+date: "September 27, 2017"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+NOTE: The full analysis used to generate this summary can be found here:
+
+- https://github.com/jtopor/DDO-TNZ/blob/master/tanz-dataexp.Rmd
+
+
+# Summary of Variables in Data Set
+
+### Numeric Variables
+
+| Numeric Variables | Comments                            |
+|-------------------|-------------------------------------|
+| amount_tsh        | 41,639 of 59,400 records = "0"      |
+| gps_height        | 20,438 of 59,400 records = "0"      |
+| population        | 21,381 of 59.400 records = "0"      |
+| longitude         | 1,812 zero values: likely invalid   |
+| latitude          | 1,819 values < -1: likely invalid   |
+
+
+### Categorical variables
+
+| Categorical Variable | Distinct Values | NA's | Comments                      |
+|----------------------|-----------------|------|-------------------------------|
+| funder               | 1898            | 3635 |                               |
+| installer            | 2146            | 3655 |                               |
+| wpt_name             | 37400           | 0    |                               |
+| num_private          | 65              | 0    |                               |
+| basin                | 9               | 0    |                               |
+| subvillage           | 19288           | 371  |                               |
+| region               | 21              | 0    |                               |
+| region_code          | 27              | 0    |                               |
+| district_code        | 20              | 0    |                               |
+| lga                  | 125             | 0    |                               |
+| ward                 | 2092            | 0    |                               |
+| public_meeting       | 3               | 3334 | binary                        |
+| scheme_management    | 13              | 3877 |                               |
+| scheme_name          | 2697            | 28166|                               |
+| permit               | 3               | 3056 | binary                        |
+| construction_year    | 55              | 20709|                               |
+| extraction_type      | 18              | 0    |                               |
+| extraction_type_group| 13              | 0    | composite of extr_type        |
+| extraction_type_class| 7               | 0    | composite of extr_type_class  |
+| management           | 12              | 0    |                               |
+| management_group     | 5               | 0    |                               |
+| payment              | 7               | 0    |                               |
+| payment_type         | 7               | 0    | dupe of payment               |
+| water_quality        | 8               | 0    |                               |
+| quality_group        | 6               | 0    | composite of water_quality    |
+| quantity             | 5               | 0    |                               |
+| quantity_group       | 5               | 0    | dupe of quantity              |
+| source               | 10              | 0    |                               |
+| source_type          | 10              | 0    | dupe of source                |
+| source_class         | 3               | 0    | binary                        |
+| waterpoint_type      | 7               | 0    |                               |
+| waterpoint_type_group| 6               | 0    | composite of waterpoint_type  |
+
+
+### Administrative / Non-Predictive Variables
+
+| Administrative Variables | Data Type |
+|--------------------------|-----------|
+| id                       | int       |
+| date_recorded            | date      |
+| recorded_by              | char str  |

@@ -1,10 +1,10 @@
 ---
-title: "Untitled"
+title: "Capstone Project Data Exploration"
 author: "James Topor"
 date: "September 22, 2017"
 output: html_document
 ---
-```{r}
+```{r, echo = FALSE, warning=FALSE, message=FALSE}
 library(knitr)
 library(tidyr)
 library(dplyr)
@@ -17,16 +17,10 @@ tanz <- read.csv("https://raw.githubusercontent.com/jtopor/DDO-TNZ/master/Tanz-T
 # count distinct items
 length(unique(tanz$id))
 
-summary(tanz)
+# summary(tanz)
 ```
 
-Determine how many rows have complete cases and how many have NA's:
-
-- 53281 complete cases
-
-- 6119 rows with NA's
-
-- 10.3% of rows have NA's
+## Determine how many rows have complete cases and how many have NA's:
 
 ```{r}
 # count number of rows with no NA's = 53281
@@ -36,8 +30,27 @@ Determine how many rows have complete cases and how many have NA's:
 (na.cases <- nrow(tanz) - c.cases)
 
 na.cases / nrow(tanz)
-
 ```
+
+
+- 53281 complete cases
+
+- 6119 rows with NA's
+
+- 10.3% of rows have NA's
+
+
+## Calculate Number of NA's for Each Variable
+
+```{r}
+# fill in all blank entries with NA
+tanz[,][tanz[,] == ""] <- NA
+
+# count NA's in each column
+kable(colSums(is.na(tanz)), col.names = c("NA Count") )
+```
+
+## Calculate Total Number of Wells for each distinct categorical variable value
 
 ```{r}
 
@@ -47,6 +60,7 @@ na.cases / nrow(tanz)
 
 # count distinct funder = 1898, 3635 NA
 length(unique(tanz$funder))
+
 
 # calc number of wells per funder
 c_funders <- arrange(summarise(group_by(tanz, funder), 
@@ -63,13 +77,22 @@ c_installers <- arrange(summarise(group_by(tanz, installer),
 head(c_installers, n = 10)
 
 # -------------------------------
-# count distinct wpt_name = 37400, 3563 = none (NA)
+# count distinct wpt_name = 37400, 3563 = none (which is not the same as NA)
 length(unique(tanz$wpt_name))
 
 # calc number of wells per wpt_name
 c_wptn <- arrange(summarise(group_by(tanz, wpt_name), 
                      TotalWells = length(unique(id)) ), desc(TotalWells) )
 head(c_wptn, n = 10)
+
+# -------------------------------
+# count distinct num_private = 65
+length(unique(tanz$num_private))
+
+# calc number of wells per wpt_name
+c_npriv <- arrange(summarise(group_by(tanz, num_private), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_npriv, n = 10)
 
 # -------------------------------
 # count distinct basin = 9
@@ -100,6 +123,15 @@ c_region <- arrange(summarise(group_by(tanz, region),
 head(c_region, n = 10)
 
 # -------------------------------
+# count distinct region_code = 27
+length(unique(tanz$region_code))
+
+# calc number of wells per region_code
+c_region_code <- arrange(summarise(group_by(tanz, region_code), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_region_code, n = 10)
+
+# -------------------------------
 # count distinct district_code = 20
 length(unique(tanz$district_code))
 
@@ -128,6 +160,15 @@ c_ward <- arrange(summarise(group_by(tanz, ward),
 head(c_ward, n = 10)
 
 # -------------------------------
+# count public_meeting = 3
+length(unique(tanz$public_meeting))
+
+# calc number of wells per ward
+c_pubmeet <- arrange(summarise(group_by(tanz, public_meeting), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_pubmeet, n = 10)
+
+# -------------------------------
 # count distinct recorded_by = 1
 length(unique(tanz$recorded_by))
 
@@ -151,6 +192,15 @@ c_scheme_n <- arrange(summarise(group_by(tanz, scheme_name),
                      TotalWells = length(unique(id)) ), desc(TotalWells) )
 head(c_scheme_n, n = 10)
 
+# -------------------------------
+# count distinct permit = 3, 28,166 NA's
+length(unique(tanz$permit))
+
+# calc number of wells per scheme_name
+c_permit <- arrange(summarise(group_by(tanz, permit), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_permit, n = 10)
+
 
 # -------------------------------
 # count distinct construction_year = 55, 20,709 NA's
@@ -171,6 +221,14 @@ c_extract_t <- arrange(summarise(group_by(tanz, extraction_type),
                      TotalWells = length(unique(id)) ), desc(TotalWells) )
 head(c_extract_t, n = 10)
 
+# -------------------------------
+# count distinct extraction_type_group = 13
+length(unique(tanz$extraction_type_group))
+
+# calc number of wells per extraction_type
+c_extract_tg <- arrange(summarise(group_by(tanz, extraction_type_group), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_extract_tg, n = 10)
 
 # -------------------------------
 # count distinct extraction_type_class = 7, 20,709 NA's
@@ -233,7 +291,7 @@ head(c_waterq, n = 10)
 # count distinct quality_group = 6
 length(unique(tanz$quality_group))
 
-# calc number of wells per water_quality
+# calc number of wells per quality_group
 c_qualityg <- arrange(summarise(group_by(tanz, quality_group), 
                      TotalWells = length(unique(id)) ), desc(TotalWells) )
 head(c_qualityg, n = 10)
@@ -304,8 +362,2019 @@ c_waterp_t_g <- arrange(summarise(group_by(tanz, waterpoint_type_group),
 head(c_waterp_t_g, n = 10)
 ```
 
+# Summary of Variables in Data Set
+
+### Numeric Variables
+
+| Numeric Variables | Comments                            |
+|-------------------|-------------------------------------|
+| amount_tsh        | 41,639 of 59,400 records = "0"      |
+| gps_height        | 20,438 of 59,400 records = "0"      |
+| population        | 21,381 of 59.400 records = "0"      |
+| longitude         | 1,812 zero values: likely invalid   |
+| latitude          | 1,819 values < -1: likely invalid   |
+
+
+### Categorical variables
+
+| Categorical Variable | Distinct Values | NA's | Comments                      |
+|----------------------|-----------------|------|-------------------------------|
+| funder               | 1898            | 3635 |                               |
+| installer            | 2146            | 3655 |                               |
+| wpt_name             | 37400           | 0    |                               |
+| num_private          | 65              | 0    |                               |
+| basin                | 9               | 0    |                               |
+| subvillage           | 19288           | 371  |                               |
+| region               | 21              | 0    |                               |
+| region_code          | 27              | 0    |                               |
+| district_code        | 20              | 0    |                               |
+| lga                  | 125             | 0    |                               |
+| ward                 | 2092            | 0    |                               |
+| public_meeting       | 3               | 3334 | binary                        |
+| scheme_management    | 13              | 3877 |                               |
+| scheme_name          | 2697            | 28166|                               |
+| permit               | 3               | 3056 | binary                        |
+| construction_year    | 55              | 20709|                               |
+| extraction_type      | 18              | 0    |                               |
+| extraction_type_group| 13              | 0    | composite of extr_type        |
+| extraction_type_class| 7               | 0    | composite of extr_type_class  |
+| management           | 12              | 0    |                               |
+| management_group     | 5               | 0    |                               |
+| payment              | 7               | 0    |                               |
+| payment_type         | 7               | 0    | dupe of payment               |
+| water_quality        | 8               | 0    |                               |
+| quality_group        | 6               | 0    | composite of water_quality    |
+| quantity             | 5               | 0    |                               |
+| quantity_group       | 5               | 0    | dupe of quantity              |
+| source               | 10              | 0    |                               |
+| source_type          | 10              | 0    | dupe of source                |
+| source_class         | 3               | 0    | binary                        |
+| waterpoint_type      | 7               | 0    |                               |
+| waterpoint_type_group| 6               | 0    | composite of waterpoint_type  |
+
+
+### Administrative / Non-Predictive Variables
+
+| Administrative Variables | Data Type |
+|--------------------------|-----------|
+| id                       | int       |
+| date_recorded            | date      |
+| recorded_by              | char str  |
+
+
+# Numeric Variables
+
+A brief analysis of each of the numeric variables contained within the data set.
+
+### amount_tsh
+
+The __amount_tsh__ variable can be characterized as representing the *"Total static head (amount water available to waterpoint)"*. Summary statistics and a boxplot for the __amount_tsh__ variable indicate a heavily right-skewed distribution:
+
+```{r}
+summary(tanz$amount_tsh)
+
+boxplot(tanz$amount_tsh, col = "yellow")
+```
+
+In fact, analysis of the __amount_tsh__ variable indicates that 41,639 of the 59,400 data records have a value of "0":
+
+```{r}
+length(tanz$amount_tsh[tanz$amount_tsh == 0])
+```
+
+Further analysis shows that 14,771 of the non-zero values fall within the range of (1 : 1000):
+
+```{r}
+atsh <- tanz$amount_tsh[tanz$amount_tsh > 0 & tanz$amount_tsh <= 1000]
+length(atsh)
+hist(atsh, col = 'yellow', main = "Histogram of amount_tsh values (1:1000)")
+```
+
+This leaves slightly less than 3,000 records having __amount_tsh__ values that exceed 1000. Such values should be investigated to determine whether they are in fact valid values for the variable.
+
+
+### gps_height
+
+The __gps_height__ variable represents the physical altitude of a well. Summary statistics and plots for the __gps_height__ variable indicate a heavily right-skewed distribution:
+
+```{r}
+summary(tanz$gps_height)
+
+boxplot(tanz$gps_height, col = "yellow")
+
+hist(tanz$gps_height, col = "yellow")
+```
+
+Both the summary statistics and the boxplot show that a portion of the data records contain a negative __gps_height__ value. An analysis of the variable finds 1,496 such records within the data set:
+
+```{r}
+length(tanz$gps_height[tanz$gps_height < 0])
+```
+
+While it may be somewhat surprising to have a well located below sea level, Africa is in fact home to many areas where the actual land altitude falls below sea level. As such, further investigation is required to determine whether or not these negative values are valid within the context of the data set. 
+
+The histogram indicates the presence of a significant number of zero values for the variable. Further analysis finds a total of 20,438 data records containing a zero value for the __gps_height__ variable. 
+
+```{r}
+length(tanz$gps_height[tanz$gps_height == 0])
+```
+
+Further analysis is required to determine whether these are in fact valid data values or if they merely represent the lack of an accurate altitude measurement for the associated wells.
+
+### population
+
+The __population__ variable represents the human population in the area surrounding a well. Summary statistics and plots for the __population__ variable indicate a heavily right-skewed distribution:
+
+```{r}
+summary(tanz$population)
+
+boxplot(tanz$population, col = "yellow")
+
+hist(tanz$population, col = "yellow")
+```
+
+Our analysis indicates the presence of a significant number of zero values for the variable. Further analysis finds a total of 21,381 data records containing a zero value for the __population__ variable. 
+
+```{r}
+length(tanz$population[tanz$population == 0])
+```
+
+While it may in fact be realistic to find a well located in an unpopulated area, it seems highly unlikely that such a large number of wells would reside in locations that are devoid of human habitants. As such, many of these zero values are likely to be invalid.
+
+### Longitude & Latitude
+
+Longitude and latitude coordinates are provided for each well within the data set. Summary statistics and plots indicate that at least a portion of the coordinates provided may be invalid, as indicated by the zero and near-zero values found in the both variables.
+
+```{r}
+summary(tanz$longitude)
+boxplot(tanz$longitude, col = "yellow")
+hist(tanz$longitude, col = 'yellow')
+
+summary(tanz$latitude)
+boxplot(tanz$latitude, col = "yellow")
+hist(tanz$latitude, col = 'yellow')
+
+```
+
+Further analysis finds 1812 zero values within the __longitude__ variable and 1819 values less than -1 for the __latitude__ variable.
+
+```{r}
+# longitude zero values
+length(tanz$longitude[tanz$longitude == 0])
+
+# latitude zero values
+length(tanz$latitude[tanz$latitude > -1])
+```
+
+Further investigation is required to determine whether these zero and near-zero values are valid within the context of the data set.
+
+
+
+# Load Training Labels
+
+
+```{r}
+# load tanzania training data labels
+tanz_trl <- read.csv("https://raw.githubusercontent.com/jtopor/DDO-TNZ/master/Tanz-Training-Labels.csv", header = TRUE, stringsAsFactors = FALSE)
+
+# append labels to training data
+# make a copy of the original data before appending
+t <- tanz
+
+t$label <- tanz_trl$status_group
+```
+
+# Count number of wells for each label
+
+```{r, echo = FALSE}
+# calc number of wells with each label
+c_labels <- arrange(summarise(group_by(t, label), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_labels, n = 10)
+
+# calc percentages for each label
+functional <- c_labels[1,2] / nrow(tanz)
+
+n_func <- c_labels[2,2] / nrow(tanz)
+
+func_n_rep <- 1 - (functional + n_func)
+
+# barplot
+rel_percs <- c(functional[1,1], n_func[1,1], func_n_rep[1,1] )
+
+mp <- barplot(rel_percs, names.arg = c('Functional', 'Non-Functional',
+        'Functional-Needs-Rep'), 
+        main = ('Well Status Percentages'), ylim = c(0, 1), col = 'yellow',
+        cex.main=.75, cex.lab=.75, cex.axis=0.75, cex.names=.75 
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, rel_percs, labels = format(round(rel_percs, 3), 4),
+        pos = 3, cex = .75)
+```
+
+The plot above provides a benchmark of sorts for purposes of evaluating each of the variables to be discussed below. The plot tells us that 54.3% of all wells are functional, 38.4% are non-functional, and 7.3% are functional but in need of repair. We can use these metrics to partially assess each of the individual categorical variable values found within the data set; as we analyze each variable value, we can determine whether or not the percentage of wells pertaining to that variable value either exceeds or falls short of the overall performance metrics plotted above. For example, those exceeding the 54.3% "functional" metric may share characteristics that poorer performing wells might benefit from emulating / replicating. 
+
+# Categorical Variables: Status of Wells for Each Variable Value
+
+Plots are only feasible for categorical variables with < 60 possible values. As such, the following categorical variables are excluded from the analysis shown below:
+
+- funder
+- installer
+- wpt_name
+- num_private
+- subvillage
+- lga
+- ward
+- scheme_name
+
+Also please note that variable values are sorted alphabetically in the plots shown below.
+
+### Basin
+
+```{r, echo = FALSE}
+# basin
+c_basin_status <- arrange(summarise(group_by(t, basin, label), 
+                     TotalWells = length(unique(id)) ), sort(basin) )
+c_basin_status
+
+# init percentage column
+c_basin_status$perc <- 0
+
+# reorder master list alphabetically
+c_basin <- c_basin[order(c_basin$basin),]
+
+# calc percentages for each label relative to each variable value
+for (i in 1:nrow(c_basin)){
+  for (j in 1:nrow(c_basin_status)) {
+    
+    if(c_basin_status[j,]$basin == 
+       c_basin[i,]$basin) {
+          c_basin_status[j,]$perc <- c_basin_status[j,]$TotalWells /
+            c_basin[i,]$TotalWells
+    }
+  } # end for j
+} # end for i
+
+# now subset for functional wells only
+funcw <- subset(c_basin_status, label == "functional")
+
+# barplot percentages for each group
+mp <- barplot(funcw$perc, names.arg = funcw$basin, 
+        main = ('Percentage of Wells Functioning: basin'), ylim = c(0, 1), col =
+          'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, funcw$perc, labels = 
+       format(round(funcw$perc, 3), 4),
+        pos = 3, cex = .70)
+
+
+# now subset for functional needs repair wells only
+func_nr <- subset(c_basin_status, label == "functional needs repair")
+
+# barplot percentages for each group
+mp <- barplot(func_nr$perc, names.arg = func_nr$basin, 
+        main = ('Percentage of Wells Functional Needs Repair: basin'), ylim =
+          c(0,0.5), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, func_nr$perc, labels = 
+       format(round(func_nr$perc, 3), 4),
+        pos = 3, cex = .70)
+
+
+# now subset for non functional wells only
+non_func <- subset(c_basin_status, label == "non functional")
+
+# barplot percentages for each group
+mp <- barplot(non_func$perc, names.arg = non_func$basin, 
+        main = ('Percentage of Wells Non Functional: basin'), ylim = 
+          c(0, 1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, non_func$perc, labels = 
+       format(round(non_func$perc, 3), 4),
+        pos = 3, cex = .70)
+```
+
+Plots for the __basin__ variable show a wide variance in the proportions of functional wells between regions: Three regions (Lake Nyasa, Pangani, Rufiji) have more than 60% of their wells functioning while the Southern Coast region has only 37.2% of its wells functioning. In fact, five of the nine regions fail to achieve the overall "functional" metric of 54.3%. The underlying reasons for these disparities should be explored to determine whether or not the underperforming basins can be improved via the application of well management methods/practices being employed within the outperforming basins.
+
+### Region
+
+```{r, echo = FALSE}
+# region
+c_region_status <- arrange(summarise(group_by(t, region, label), 
+                     TotalWells = length(unique(id)) ), sort(region) )
+c_region_status
+
+# init percentage column
+c_region_status$perc <- 0
+
+# reorder master list alphabetically
+c_region <- c_region[order(c_region$region),]
+
+# calc percentages for each label relative to each variable value
+for (i in 1:nrow(c_region)){
+  for (j in 1:nrow(c_region_status)) {
+    
+    if(c_region_status[j,]$region == 
+       c_region[i,]$region) {
+          c_region_status[j,]$perc <- c_region_status[j,]$TotalWells /
+            c_region[i,]$TotalWells
+    }
+  } # end for j
+} # end for i
+
+# now subset for functional wells only
+funcw <- subset(c_region_status, label == "functional")
+
+# barplot percentages for each group
+mp <- barplot(funcw$perc, names.arg = funcw$region, 
+        main = ('Percentage of Wells Functioning: region'), ylim = c(0, 1), col =
+          'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, funcw$perc, labels = 
+       format(round(funcw$perc, 3), 4),
+        pos = 3, cex = .70)
+
+
+# now subset for functional needs repair wells only
+func_nr <- subset(c_region_status, label == "functional needs repair")
+
+# barplot percentages for each group
+mp <- barplot(func_nr$perc, names.arg = func_nr$region, 
+        main = ('Percentage of Wells Functional Needs Repair: region'), ylim =
+          c(0,0.5), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, func_nr$perc, labels = 
+       format(round(func_nr$perc, 3), 4),
+        pos = 3, cex = .70)
+
+
+# now subset for non functional wells only
+non_func <- subset(c_region_status, label == "non functional")
+
+# barplot percentages for each group
+mp <- barplot(non_func$perc, names.arg = non_func$region, 
+        main = ('Percentage of Wells Non Functional: region'), ylim = 
+          c(0, 1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, non_func$perc, labels = 
+       format(round(non_func$perc, 3), 4),
+        pos = 3, cex = .70)
+```
+
+The functional well disparities found within the various regions exceed those seen within the __basin__ variable: we see one region (Iringa) having more than 78.2% of its wells functional while the region of Lindi has only 29.8% functional, a nearly 50 point difference. In fact, of the 21 regions listed, only 9 exceed the overall functional metric of 54.3%. Furthermore, we find the region of Kigoma has 21.4% of its wells as "functional needs repair", a percentage that greatly exceeds all other regions. 
+
+### Region Code
+
+```{r, echo = FALSE}
+# region
+c_regionc_status <- arrange(summarise(group_by(t, region_code, label), 
+                     TotalWells = length(unique(id)) ) )
+c_regionc_status
+
+# init percentage column
+c_regionc_status$perc <- 0
+
+# reorder master list alphabetically
+c_region_code <- c_region_code[order(c_region_code$region_code),]
+
+# calc percentages for each label relative to each variable value
+for (i in 1:nrow(c_region_code)){
+  for (j in 1:nrow(c_regionc_status)) {
+    
+    if(c_regionc_status[j,]$region_code == 
+       c_region_code[i,]$region_code) {
+          c_regionc_status[j,]$perc <- c_regionc_status[j,]$TotalWells /
+            c_region_code[i,]$TotalWells
+    }
+  } # end for j
+} # end for i
+
+# now subset for functional wells only
+funcw <- subset(c_regionc_status, label == "functional")
+
+# barplot percentages for each group
+mp <- barplot(funcw$perc, names.arg = funcw$region_code, 
+        main = ('Percentage of Wells Functioning: region_code'), ylim = c(0, 1), col =
+          'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, funcw$perc, labels = 
+       format(round(funcw$perc, 3), 4),
+        pos = 3, cex = .70)
+
+
+# now subset for functional needs repair wells only
+func_nr <- subset(c_regionc_status, label == "functional needs repair")
+
+# barplot percentages for each group
+mp <- barplot(func_nr$perc, names.arg = func_nr$region_code, 
+        main = ('Percentage of Wells Functional Needs Repair: region_code'), ylim =
+          c(0,0.5), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, func_nr$perc, labels = 
+       format(round(func_nr$perc, 3), 4),
+        pos = 3, cex = .70)
+
+
+# now subset for non functional wells only
+non_func <- subset(c_regionc_status, label == "non functional")
+
+# barplot percentages for each group
+mp <- barplot(non_func$perc, names.arg = non_func$region_code, 
+        main = ('Percentage of Wells Non Functional: region_code'), ylim = 
+          c(0, 1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, non_func$perc, labels = 
+       format(round(non_func$perc, 3), 4),
+        pos = 3, cex = .70)
+```
+
+Plotting the status of wells relative to the __region_code__ variable shows even greater disparities between geographic regions for functional wells, from a low of 8.7% in Region 8 to nearly 97% in Region 24. Region 16 shows an unusually large 21.4% of its wells having a status of "functional needs repair" while Region 40 has fully 100% of its wells not functioning.
+
+
+### Construction Year
+
+```{r, echo = FALSE}
+# construction_year
+c_const_y_status <- arrange(summarise(group_by(t, construction_year, label), 
+                     TotalWells = length(unique(id)) ), sort(construction_year) )
+c_const_y_status
+
+# init percentage column
+c_const_y_status$perc <- 0
+
+# reorder master list alphabetically
+c_const_y <- c_const_y[order(c_const_y$construction_year),]
+
+# calc percentages for each label relative to each variable value
+for (i in 1:nrow(c_const_y)){
+  for (j in 1:nrow(c_const_y_status)) {
+    
+    if(c_const_y_status[j,]$construction_year == 
+       c_const_y[i,]$construction_year) {
+          c_const_y_status[j,]$perc <- c_const_y_status[j,]$TotalWells /
+            c_const_y[i,]$TotalWells
+    }
+  } # end for j
+} # end for i
+
+# now subset for functional wells only
+funcw <- subset(c_const_y_status, label == "functional")
+
+# barplot percentages for each group
+mp <- barplot(funcw$perc, names.arg = funcw$construction_year, 
+        main = ('Percentage of Wells Functioning: construction_year'), ylim = c(0, 1), col =
+          'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
+)
+        
+# write the percentage values above the individual bars in the plot
+#text(mp, funcw$perc, labels = 
+#       format(round(funcw$perc, 3), 4),
+#        pos = 3, cex = .75)
+
+
+# now subset for functional needs repair wells only
+func_nr <- subset(c_const_y_status, label == "functional needs repair")
+
+# barplot percentages for each group
+mp <- barplot(func_nr$perc, names.arg = func_nr$construction_year, 
+        main = ('Percentage of Wells Functional Needs Repair: construction_year'), ylim =
+          c(0,0.5), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
+)
+        
+# write the percentage values above the individual bars in the plot
+#text(mp, func_nr$perc, labels = 
+#       format(round(func_nr$perc, 3), 4),
+#        pos = 3, cex = .75)
+
+
+# now subset for non functional wells only
+non_func <- subset(c_const_y_status, label == "non functional")
+
+# barplot percentages for each group
+mp <- barplot(non_func$perc, names.arg = non_func$construction_year, 
+        main = ('Percentage of Wells Non Functional: construction_year'), ylim = 
+          c(0, 1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
+)
+        
+# write the percentage values above the individual bars in the plot
+#text(mp, non_func$perc, labels = 
+#       format(round(non_func$perc, 3), 4),
+#        pos = 3, cex = .75)
+```
+
+Plotting the status of wells by construction year allows us to conclude that relatively newer wells are generally more likely to be functional than are relatively older wells. While this is rather unsurprising from an intuitive perspective, confirmation of such intuition can prove to be useful when crafting a predictive model. 
+
+
+### District Code
+
+```{r, echo = FALSE}
+# district code
+c_distc_status <- arrange(summarise(group_by(t, district_code, label), 
+                     TotalWells = length(unique(id)) ), sort(district_code) )
+head(c_distc_status, n = 10)
+
+# init percentage column
+c_distc_status$perc <- 0
+
+# reorder master list alphabetically
+c_distc <- c_distc[order(c_distc$district_code),]
+
+# calc percentages for each label relative to each variable value
+for (i in 1:nrow(c_distc)){
+  for (j in 1:nrow(c_distc_status)) {
+    
+    if(c_distc_status[j,]$district_code == 
+       c_distc[i,]$district_code) {
+          c_distc_status[j,]$perc <- c_distc_status[j,]$TotalWells /
+            c_distc[i,]$TotalWells
+    }
+  } # end for j
+} # end for i
+
+# now subset for functional wells only
+funcw <- subset(c_distc_status, label == "functional")
+
+# barplot percentages for each group
+mp <- barplot(funcw$perc, names.arg = funcw$district_code, 
+        main = ('Percentage of Wells Functioning: district_code'), ylim = c(0, 1), col =
+          'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, funcw$perc, labels = 
+       format(round(funcw$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for functional needs repair wells only
+func_nr <- subset(c_distc_status, label == "functional needs repair")
+
+# barplot percentages for each group
+mp <- barplot(func_nr$perc, names.arg = func_nr$district_code, 
+        main = ('Percentage of Wells Functional Needs Repair: district_code'), ylim =
+          c(0,0.5), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, func_nr$perc, labels = 
+       format(round(func_nr$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for non functional wells only
+non_func <- subset(c_distc_status, label == "non functional")
+
+# barplot percentages for each group
+mp <- barplot(non_func$perc, names.arg = non_func$district_code, 
+        main = ('Percentage of Wells Non Functional: district_code'), ylim = 
+          c(0, 1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, non_func$perc, labels = 
+       format(round(non_func$perc, 3), 4),
+        pos = 3, cex = .75)
+```
+
+The __district_code__ variable is yet another geographic label, and as with the others we've analyzed (e.g., __basin__, __region__, etc.) we see a wide disparity in the percentage of functional wells, ranging from a low of 17.4% for district 0 to a hight of 83.3% in district 67. Only 9 of the 20 districts exceed the overall 54.3% functional well metric. Furthermore we see that six districts' "non functional" well percentages exceed 60%.
+
+
+### Public Meeting
+
+```{r, echo = FALSE}
+# public_meeting
+c_pubm_status <- arrange(summarise(group_by(t, public_meeting, label), 
+                     TotalWells = length(unique(id)) ) )
+head(c_pubm_status, n = 10)
+
+# fill in NA's so data can be plotted
+c_pubmeet$public_meeting[is.na(c_pubmeet$public_meeting)] <- "unknown"
+c_pubm_status$public_meeting[is.na(c_pubm_status$public_meeting)] <- "unknown"
+
+# init percentage column
+c_pubm_status$perc <- 0
+
+# reorder master list alphabetically
+c_pubmeet <- c_pubmeet[order(c_pubmeet$public_meeting),]
+
+# calc percentages for each label relative to each variable value
+for (i in 1:nrow(c_pubmeet)){
+  for (j in 1:nrow(c_pubm_status)) {
+    
+    if(c_pubm_status[j,]$public_meeting == 
+       c_pubmeet[i,]$public_meeting) {
+          c_pubm_status[j,]$perc <- c_pubm_status[j,]$TotalWells /
+            c_pubmeet[i,]$TotalWells
+    }
+  } # end for j
+} # end for i
+
+# now subset for functional wells only
+funcw <- subset(c_pubm_status, label == "functional")
+
+# barplot percentages for each group
+mp <- barplot(funcw$perc, names.arg = funcw$public_meeting, 
+        main = ('Percentage of Wells Functioning: public_meeting'), ylim = c(0, 1), col =
+          'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, funcw$perc, labels = 
+       format(round(funcw$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for functional needs repair wells only
+func_nr <- subset(c_pubm_status, label == "functional needs repair")
+
+# barplot percentages for each group
+mp <- barplot(func_nr$perc, names.arg = func_nr$public_meeting, 
+        main = ('Percentage of Wells Functional Needs Repair: public_meeting'), ylim =
+          c(0,0.5), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, func_nr$perc, labels = 
+       format(round(func_nr$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for non functional wells only
+non_func <- subset(c_pubm_status, label == "non functional")
+
+# barplot percentages for each group
+mp <- barplot(non_func$perc, names.arg = non_func$public_meeting, 
+        main = ('Percentage of Wells Non Functional: public_meeting'), ylim = 
+          c(0, 1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, non_func$perc, labels = 
+       format(round(non_func$perc, 3), 4),
+        pos = 3, cex = .75)
+```
+
+The __public_meeting__ variable is essentially a binary variable. The plots above show that, in general, wells that benefited from a public meeting are more likely to be functional than those that have not. 
+
+
+### Scheme Management
+
+```{r, echo = FALSE}
+
+# scheme_management
+c_scheme_m_status <- arrange(summarise(group_by(t, scheme_management, label), 
+                     TotalWells = length(unique(id)) ) )
+c_scheme_m_status
+
+# fill in NA's so data can be plotted
+c_scheme_m$scheme_management[is.na(c_scheme_m$scheme_management)] <- "unknown"
+c_scheme_m_status$scheme_management[is.na(c_scheme_m_status$scheme_management)] <- "unknown"
+
+# init percentage column
+c_scheme_m_status$perc <- 0
+
+# reorder master list alphabetically
+c_scheme_m <- c_scheme_m[order(c_scheme_m$scheme_management),]
+
+# calc percentages for each label relative to each variable value
+for (i in 1:nrow(c_scheme_m)){
+  for (j in 1:nrow(c_scheme_m_status)) {
+    
+    if(c_scheme_m_status[j,]$scheme_management == 
+       c_scheme_m[i,]$scheme_management) {
+          c_scheme_m_status[j,]$perc <- c_scheme_m_status[j,]$TotalWells /
+            c_scheme_m[i,]$TotalWells
+    }
+  } # end for j
+} # end for i
+
+# now subset for functional wells only
+funcw <- subset(c_scheme_m_status, label == "functional")
+
+# barplot percentages for each group
+mp <- barplot(funcw$perc, names.arg = funcw$scheme_management, 
+        main = ('Percentage of Wells Functioning: scheme_management'), ylim = c(0, 1), col =
+          'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, funcw$perc, labels = 
+       format(round(funcw$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for functional needs repair wells only
+func_nr <- subset(c_scheme_m_status, label == "functional needs repair")
+
+# barplot percentages for each group
+mp <- barplot(func_nr$perc, names.arg = func_nr$scheme_management, 
+        main = ('Percentage of Wells Functional Needs Repair: scheme_management'), ylim =
+          c(0,0.5), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, func_nr$perc, labels = 
+       format(round(func_nr$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for non functional wells only
+non_func <- subset(c_scheme_m_status, label == "non functional")
+
+# barplot percentages for each group
+mp <- barplot(non_func$perc, names.arg = non_func$scheme_management, 
+        main = ('Percentage of Wells Non Functional: scheme_management'), ylim = 
+          c(0, 1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, non_func$perc, labels = 
+       format(round(non_func$perc, 3), 4),
+        pos = 3, cex = .75)
+```
+
+Plots for the __scheme_management__ variable show that (excluding "None" since it applies to only a single well) that while the __Water Board__ scheme seems to yield the largest percentage of functional wells, that scheme is used for a relatively small number (2,748) of the 59,400 wells. By contrast, the __VWC__ scheme is used for nearly 36,800 wells. So while a majority of the schemes exceed the 54.3% overall functional metric, the vast majority of the wells themselves do not benefit from those schemes. 
+
+### Permit
+
+```{r, echo = FALSE}
+
+# permit
+c_permit_status <- arrange(summarise(group_by(t, permit, label), 
+                     TotalWells = length(unique(id)) ) )
+c_permit_status
+
+# fill in NA's so data can be plotted
+c_permit$permit[is.na(c_permit$permit)] <- "unknown"
+c_permit_status$permit[is.na(c_permit_status$permit)] <- "unknown"
+
+# init percentage column
+c_permit_status$perc <- 0
+
+# reorder master list alphabetically
+c_permit <- c_permit[order(c_permit$permit),]
+
+# calc percentages for each label relative to each variable value
+for (i in 1:nrow(c_permit)){
+  for (j in 1:nrow(c_permit_status)) {
+    
+    if(c_permit_status[j,]$permit == 
+       c_permit[i,]$permit) {
+          c_permit_status[j,]$perc <- c_permit_status[j,]$TotalWells /
+            c_permit[i,]$TotalWells
+    }
+  } # end for j
+} # end for i
+
+# now subset for functional wells only
+funcw <- subset(c_permit_status, label == "functional")
+
+# barplot percentages for each group
+mp <- barplot(funcw$perc, names.arg = funcw$permit, 
+        main = ('Percentage of Wells Functioning: permit'), ylim = c(0, 1), col =
+          'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, funcw$perc, labels = 
+       format(round(funcw$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for functional needs repair wells only
+func_nr <- subset(c_permit_status, label == "functional needs repair")
+
+# barplot percentages for each group
+mp <- barplot(func_nr$perc, names.arg = func_nr$permit, 
+        main = ('Percentage of Wells Functional Needs Repair: permit'), ylim =
+          c(0,0.5), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, func_nr$perc, labels = 
+       format(round(func_nr$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for non functional wells only
+non_func <- subset(c_permit_status, label == "non functional")
+
+# barplot percentages for each group
+mp <- barplot(non_func$perc, names.arg = non_func$permit, 
+        main = ('Percentage of Wells Non Functional: permit'), ylim = 
+          c(0, 1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, non_func$perc, labels = 
+       format(round(non_func$perc, 3), 4),
+        pos = 3, cex = .75)
+```
+
+The __permit__ variable is a binary True/False indicator. The plots above show that wells that required a permit are more likely to be functional than are those that did not require a permit.
+
+### Extraction Type
+
+```{r, echo = FALSE}
+# extraction_type
+c_extract_t_status <- arrange(summarise(group_by(t, extraction_type, label), 
+                     TotalWells = length(unique(id)) ), sort(extraction_type) )
+c_extract_t_status
+
+# init percentage column
+c_extract_t_status$perc <- 0
+
+# reorder master list alphabetically
+c_extract_t <- c_extract_t[order(c_extract_t$extraction_type),]
+
+# calc percentages for each label relative to each variable value
+for (i in 1:nrow(c_extract_t)){
+  for (j in 1:nrow(c_extract_t_status)) {
+    
+    if(c_extract_t_status[j,]$extraction_type == 
+       c_extract_t[i,]$extraction_type) {
+          c_extract_t_status[j,]$perc <- c_extract_t_status[j,]$TotalWells /
+            c_extract_t[i,]$TotalWells
+    }
+  } # end for j
+} # end for i
+
+# now subset for functional wells only
+funcw <- subset(c_extract_t_status, label == "functional")
+
+# barplot percentages for each group
+mp <- barplot(funcw$perc, names.arg = funcw$extraction_type, 
+        main = ('Percentage of Wells Functioning: Extraction_Type'), ylim = c(0, 1), col =
+          'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, funcw$perc, labels = 
+       format(round(funcw$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for functional needs repair wells only
+func_nr <- subset(c_extract_t_status, label == "functional needs repair")
+
+# barplot percentages for each group
+mp <- barplot(func_nr$perc, names.arg = func_nr$extraction_type, 
+        main = ('Percentage of Wells Functional Needs Repair: Extraction_Type'), ylim =
+          c(0,0.5), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, func_nr$perc, labels = 
+       format(round(func_nr$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for non functional wells only
+non_func <- subset(c_extract_t_status, label == "non functional")
+
+# barplot percentages for each group
+mp <- barplot(non_func$perc, names.arg = non_func$extraction_type, 
+        main = ('Percentage of Wells Non Functional: Extraction_Type'), ylim = 
+          c(0, 1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, non_func$perc, labels = 
+       format(round(non_func$perc, 3), 4),
+        pos = 3, cex = .75)
+```
+
+Plots of the __extraction_type__ variable show that seven of the seventeen extraction types have functional metrics that exceed the overall 54.3% benchmark. Of particular interest here is the __gravity__ type since nearly 27,000 of the 59,400 total wells rely on that approach, a far higher percentage than any of the other extraction types. 
+
+### Extraction Type Group
+
+```{r, echo = FALSE}
+# extraction_type
+c_extract_tg_status <- arrange(summarise(group_by(t, extraction_type_group, label), 
+                     TotalWells = length(unique(id)) ) )
+c_extract_tg_status
+
+# init percentage column
+c_extract_tg_status$perc <- 0
+
+# reorder master list alphabetically
+c_extract_tg <- c_extract_tg[order(c_extract_tg$extraction_type_group),]
+
+# calc percentages for each label relative to each variable value
+for (i in 1:nrow(c_extract_tg)){
+  for (j in 1:nrow(c_extract_tg_status)) {
+    
+    if(c_extract_tg_status[j,]$extraction_type_group == 
+       c_extract_tg[i,]$extraction_type_group) {
+          c_extract_tg_status[j,]$perc <- c_extract_tg_status[j,]$TotalWells /
+            c_extract_tg[i,]$TotalWells
+    }
+  } # end for j
+} # end for i
+
+# now subset for functional wells only
+funcw <- subset(c_extract_tg_status, label == "functional")
+
+# barplot percentages for each group
+mp <- barplot(funcw$perc, names.arg = funcw$extraction_type_group, 
+        main = ('Percentage of Wells Functioning: Extraction_Type_group'), ylim = c(0, 1), col =
+          'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, funcw$perc, labels = 
+       format(round(funcw$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for functional needs repair wells only
+func_nr <- subset(c_extract_tg_status, label == "functional needs repair")
+
+# barplot percentages for each group
+mp <- barplot(func_nr$perc, names.arg = func_nr$extraction_type_group, 
+        main = ('Percentage of Wells Functional Needs Repair: Extraction_Type_group'), ylim =
+          c(0,0.5), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, func_nr$perc, labels = 
+       format(round(func_nr$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for non functional wells only
+non_func <- subset(c_extract_tg_status, label == "non functional")
+
+# barplot percentages for each group
+mp <- barplot(non_func$perc, names.arg = non_func$extraction_type_group, 
+        main = ('Percentage of Wells Non Functional: Extraction_Type_group'), ylim = 
+          c(0, 1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, non_func$perc, labels = 
+       format(round(non_func$perc, 3), 4),
+        pos = 3, cex = .75)
+```
+
+The __extraction_type_group__ indicator appears to represent a narrowing of the breadth of values available via the __extraction_type__ variable into various higher-level overall categories. The __gravity__ type group again accounts for the largest percentage of total wells. 
+
+### Extraction Type Class
+
+```{r, echo = FALSE}
+# extraction_type
+c_extract_tc_status <- arrange(summarise(group_by(t, extraction_type_class, label), 
+                     TotalWells = length(unique(id)) ) )
+c_extract_tc_status
+
+# init percentage column
+c_extract_tc_status$perc <- 0
+
+# reorder master list alphabetically
+c_extract_t_c <- c_extract_t_c[order(c_extract_t_c$extraction_type_class),]
+
+# calc percentages for each label relative to each variable value
+for (i in 1:nrow(c_extract_t_c)){
+  for (j in 1:nrow(c_extract_tc_status)) {
+    
+    if(c_extract_tc_status[j,]$extraction_type_class == 
+       c_extract_t_c[i,]$extraction_type_class) {
+          c_extract_tc_status[j,]$perc <- c_extract_tc_status[j,]$TotalWells /
+            c_extract_t_c[i,]$TotalWells
+    }
+  } # end for j
+} # end for i
+
+# now subset for functional wells only
+funcw <- subset(c_extract_tc_status, label == "functional")
+
+# barplot percentages for each group
+mp <- barplot(funcw$perc, names.arg = funcw$extraction_type_class, 
+        main = ('Percentage of Wells Functioning: Extraction_Type_class'), ylim = c(0, 1), col =
+          'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, funcw$perc, labels = 
+       format(round(funcw$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for functional needs repair wells only
+func_nr <- subset(c_extract_tc_status, label == "functional needs repair")
+
+# barplot percentages for each group
+mp <- barplot(func_nr$perc, names.arg = func_nr$extraction_type_class, 
+        main = ('Percentage of Wells Functional Needs Repair: Extraction_Type_class'), ylim =
+          c(0,0.5), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, func_nr$perc, labels = 
+       format(round(func_nr$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for non functional wells only
+non_func <- subset(c_extract_tc_status, label == "non functional")
+
+# barplot percentages for each group
+mp <- barplot(non_func$perc, names.arg = non_func$extraction_type_class, 
+        main = ('Percentage of Wells Non Functional: Extraction_Type_class'), ylim = 
+          c(0, 1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, non_func$perc, labels = 
+       format(round(non_func$perc, 3), 4),
+        pos = 3, cex = .75)
+```
+
+The __extraction_type_class__ indicator appears to represent a narrowing of the breadth of values available via the __extraction_type_group__ variable into various higher-level overall categories. The __gravity__ type class again accounts for the largest percentage of total wells. However, the __handpump__ class also represents a significant percentage of the total well count, with nearly 16,400 wells having been assigned to that class. Of tje seven classes, three exceed the 54.3% overall functional benchmark.
+
+
+### Management
+
+```{r, echo = FALSE}
+# management
+c_mgmt_status <- arrange(summarise(group_by(t, management, label), 
+                     TotalWells = length(unique(id)) ), sort(management) )
+c_mgmt_status
+
+# init percentage column
+c_mgmt_status$perc <- 0
+
+# reorder master list alphabetically
+c_mgmt <- c_mgmt[order(c_mgmt$management),]
+
+# calc percentages for each label relative to each variable value
+for (i in 1:nrow(c_mgmt)){
+  for (j in 1:nrow(c_mgmt_status)) {
+    
+    if(c_mgmt_status[j,]$management == 
+       c_mgmt[i,]$management) {
+          c_mgmt_status[j,]$perc <- c_mgmt_status[j,]$TotalWells /
+            c_mgmt[i,]$TotalWells
+    }
+  } # end for j
+} # end for i
+
+# now subset for functional wells only
+funcw <- subset(c_mgmt_status, label == "functional")
+
+# barplot percentages for each group
+mp <- barplot(funcw$perc, names.arg = funcw$management, 
+        main = ('Percentage of Wells Functioning: Management'), ylim = c(0, 1), col =
+          'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, funcw$perc, labels = 
+       format(round(funcw$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for functional needs repair wells only
+func_nr <- subset(c_mgmt_status, label == "functional needs repair")
+
+# barplot percentages for each group
+mp <- barplot(func_nr$perc, names.arg = func_nr$management, 
+        main = ('Percentage of Wells Functional Needs Repair: Management'), ylim =
+          c(0,0.5), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, func_nr$perc, labels = 
+       format(round(func_nr$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for non functional wells only
+non_func <- subset(c_mgmt_status, label == "non functional")
+
+# barplot percentages for each group
+mp <- barplot(non_func$perc, names.arg = non_func$management, 
+        main = ('Percentage of Wells Non Functional: Management'), ylim = 
+          c(0, 1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, non_func$perc, labels = 
+       format(round(non_func$perc, 3), 4),
+        pos = 3, cex = .75)
+```
+
+__VWC__ dominates the __management__ variable's values, with more than 40,000 wells having been assigned that value. As we can see in the plots above, while seven other management approaches have higher percentages of their wells functional, collectively those seven approaches are applied to less than one third of the wells. 
+
+### Management Group
+
+```{r, echo = FALSE}
+# management group
+c_mgmt_grp_status <- arrange(summarise(group_by(t, management_group, label), 
+                     TotalWells = length(unique(id)) ), sort(management_group) )
+c_mgmt_grp_status
+
+# init percentage column
+c_mgmt_grp_status$perc <- 0
+
+# reorder master list alphabetically
+c_mgmt_grp <- c_mgmt_grp[order(c_mgmt_grp$management_group),]
+
+# calc percentages for each label relative to each variable value
+for (i in 1:nrow(c_mgmt_grp)){
+  for (j in 1:nrow(c_mgmt_grp_status)) {
+    
+    if(c_mgmt_grp_status[j,]$management_group == 
+       c_mgmt_grp[i,]$management_group) {
+          c_mgmt_grp_status[j,]$perc <- c_mgmt_grp_status[j,]$TotalWells /
+            c_mgmt_grp[i,]$TotalWells
+    }
+  } # end for j
+} # end for i
+
+# now subset for functional wells only
+funcw <- subset(c_mgmt_grp_status, label == "functional")
+
+# barplot percentages for each group
+mp <- barplot(funcw$perc, names.arg = funcw$management_group, 
+        main = ('Percentage of Wells Functioning: Management_Group'), ylim = c(0, 1), col =
+          'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, funcw$perc, labels = 
+       format(round(funcw$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for functional needs repair wells only
+func_nr <- subset(c_mgmt_grp_status, label == "functional needs repair")
+
+# barplot percentages for each group
+mp <- barplot(func_nr$perc, names.arg = func_nr$management_group, 
+        main = ('Percentage of Wells Functional Needs Repair: Management_Group'), ylim =
+          c(0,0.5), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, func_nr$perc, labels = 
+       format(round(func_nr$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for non functional wells only
+non_func <- subset(c_mgmt_grp_status, label == "non functional")
+
+# barplot percentages for each group
+mp <- barplot(non_func$perc, names.arg = non_func$management_group, 
+        main = ('Percentage of Wells Non Functional: Management_Group'), ylim = 
+          c(0, 1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, non_func$perc, labels = 
+       format(round(non_func$perc, 3), 4),
+        pos = 3, cex = .75)
+```
+
+The __management_group__ variable's most relevant value is __user-group__, with 52,490 wells having been assigned that value. As we can see in the plots, __user-group__ yields a functional well percentage close to that of the 54.3% overall functional metric.
+
+
+### Payment
+
+```{r, echo = FALSE}
+# payment
+c_paymt_status <- arrange(summarise(group_by(t, payment, label), 
+                     TotalWells = length(unique(id)) ), sort(payment) )
+c_paymt_status
+
+# init percentage column
+c_paymt_status$perc <- 0
+
+# reorder master list alphabetically
+c_paymt <- c_paymt[order(c_paymt$payment),]
+
+# calc percentages for each label relative to each variable value
+for (i in 1:nrow(c_paymt)){
+  for (j in 1:nrow(c_paymt_status)) {
+    
+    if(c_paymt_status[j,]$payment == 
+       c_paymt[i,]$payment) {
+          c_paymt_status[j,]$perc <- c_paymt_status[j,]$TotalWells /
+            c_paymt[i,]$TotalWells
+    }
+  } # end for j
+} # end for i
+
+# now subset for functional wells only
+funcw <- subset(c_paymt_status, label == "functional")
+
+# barplot percentages for each group
+mp <- barplot(funcw$perc, names.arg = funcw$payment, 
+        main = ('Percentage of Wells Functioning: Payment'), ylim = c(0, 1), col =
+          'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, funcw$perc, labels = 
+       format(round(funcw$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for functional needs repair wells only
+func_nr <- subset(c_paymt_status, label == "functional needs repair")
+
+# barplot percentages for each group
+mp <- barplot(func_nr$perc, names.arg = func_nr$payment, 
+        main = ('Percentage of Wells Functional Needs Repair: Payment'), ylim =
+          c(0,1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, func_nr$perc, labels = 
+       format(round(func_nr$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for non functional wells only
+non_func <- subset(c_paymt_status, label == "non functional")
+
+# barplot percentages for each group
+mp <- barplot(non_func$perc, names.arg = non_func$payment, 
+        main = ('Percentage of Wells Non Functional: Payment'), ylim = 
+          c(0, 1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, non_func$perc, labels = 
+       format(round(non_func$perc, 3), 4),
+        pos = 3, cex = .75)
+```
+
+__Payment__ represents how the water is actually paid for by users of the pump, if at all. More than 25,000 wells require no payment for their use, and, unsurprisingly, those wells appear to be the least functional overall if __unknown__ payment types are excluded. However, wells that do not require payment may be located in remote areas where collection of payment is not feasible. Nevertheless, it appears reasonable to conclude that requiring users to pay for use of a well is more likely to result in a well remaining functional than will allowing use of a well free of charge.
+
+
+### Payment Type
+
+```{r, echo = FALSE}
+# payment_type
+c_paymt_t_status <- arrange(summarise(group_by(t, payment_type, label), 
+                     TotalWells = length(unique(id)) ), sort(payment_type) )
+c_paymt_t_status
+
+# init percentage column
+c_paymt_t_status$perc <- 0
+
+# reorder master list alphabetically
+c_paymt_t <- c_paymt_t[order(c_paymt_t$payment_type),]
+
+# calc percentages for each label relative to each variable value
+for (i in 1:nrow(c_paymt_t)){
+  for (j in 1:nrow(c_paymt_t_status)) {
+    
+    if(c_paymt_t_status[j,]$payment_type == 
+       c_paymt_t[i,]$payment_type) {
+          c_paymt_t_status[j,]$perc <- c_paymt_t_status[j,]$TotalWells /
+            c_paymt_t[i,]$TotalWells
+    }
+  } # end for j
+} # end for i
+
+# now subset for functional wells only
+funcw <- subset(c_paymt_t_status, label == "functional")
+
+# barplot percentages for each group
+mp <- barplot(funcw$perc, names.arg = funcw$payment_type, 
+        main = ('Percentage of Wells Functioning: Payment Type'), ylim = c(0, 1), col =
+          'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, funcw$perc, labels = 
+       format(round(funcw$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for functional needs repair wells only
+func_nr <- subset(c_paymt_t_status, label == "functional needs repair")
+
+# barplot percentages for each group
+mp <- barplot(func_nr$perc, names.arg = func_nr$payment_type, 
+        main = ('Percentage of Wells Functional Needs Repair: Payment_Type'), ylim =
+          c(0,1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, func_nr$perc, labels = 
+       format(round(func_nr$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for non functional wells only
+non_func <- subset(c_paymt_t_status, label == "non functional")
+
+# barplot percentages for each group
+mp <- barplot(non_func$perc, names.arg = non_func$payment_type, 
+        main = ('Percentage of Wells Non Functional: Payment_Type'), ylim = 
+          c(0, 1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, non_func$perc, labels = 
+       format(round(non_func$perc, 3), 4),
+        pos = 3, cex = .75)
+```
+
+The __payment_type__ variable's values are not distinct from those of the __payment__ variable. In fact, the names of the values are simply minor alterations of those provided via the __payment__ variable. All of the plots shown above exhibit values identical to those of the __payment__ variable once the minor value name alterations are considered. As such, the __payment_type__ variable appears to be redundant and can therefore be ignored for purposes of model building.
+
+
+### Water Quality
+
+```{r, echo = FALSE}
+# water_quality
+c_waterq_status <- arrange(summarise(group_by(t, water_quality, label), 
+                     TotalWells = length(unique(id)) ), sort(water_quality) )
+c_waterq_status
+
+# init percentage column
+c_waterq_status$perc <- 0
+
+# reorder master list alphabetically
+c_waterq <- c_waterq[order(c_waterq$water_quality),]
+
+# calc percentages for each label relative to each variable value
+for (i in 1:nrow(c_waterq)){
+  for (j in 1:nrow(c_waterq_status)) {
+    
+    if(c_waterq_status[j,]$water_quality == 
+       c_waterq[i,]$water_quality) {
+          c_waterq_status[j,]$perc <- c_waterq_status[j,]$TotalWells /
+            c_waterq[i,]$TotalWells
+    }
+  } # end for j
+} # end for i
+
+# now subset for functional wells only
+funcw <- subset(c_waterq_status, label == "functional")
+
+# barplot percentages for each group
+mp <- barplot(funcw$perc, names.arg = funcw$water_quality, 
+        main = ('Percentage of Wells Functioning: Water_Quality'), ylim = c(0, 1), col =
+          'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, funcw$perc, labels = 
+       format(round(funcw$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for functional needs repair wells only
+func_nr <- subset(c_waterq_status, label == "functional needs repair")
+
+# barplot percentages for each group
+mp <- barplot(func_nr$perc, names.arg = func_nr$water_quality, 
+        main = ('Percentage of Wells Functional Needs Repair: Water_Quality'), ylim =
+          c(0,1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, func_nr$perc, labels = 
+       format(round(func_nr$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for non functional wells only
+non_func <- subset(c_waterq_status, label == "non functional")
+
+# barplot percentages for each group
+mp <- barplot(non_func$perc, names.arg = non_func$water_quality, 
+        main = ('Percentage of Wells Non Functional: Water_Quality'), ylim = 
+          c(0, 1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, non_func$perc, labels = 
+       format(round(non_func$perc, 3), 4),
+        pos = 3, cex = .75)
+```
+
+The __water_quality__ variable is dominated by the __soft__ value, with 50,818 of the 59,400 wells having that __water_quality__ value. While the plots shown above indicate that the largest percentage of functional wells belong to those of the __fluoride__ category, there are only 200 such wells throughout the country.
+
+
+### Quality Group
+
+```{r, echo = FALSE}
+# quality_group
+c_qualityg_status <- arrange(summarise(group_by(t, quality_group, label), 
+                     TotalWells = length(unique(id)) ), sort(quality_group) )
+c_qualityg_status
+
+# init percentage column
+c_qualityg_status$perc <- 0
+
+# reorder master list alphabetically
+c_qualityg <- c_qualityg[order(c_qualityg$quality_group),]
+
+# calc percentages for each label relative to each variable value
+for (i in 1:nrow(c_qualityg)){
+  for (j in 1:nrow(c_qualityg_status)) {
+    
+    if(c_qualityg_status[j,]$quality_group == 
+       c_qualityg[i,]$quality_group) {
+          c_qualityg_status[j,]$perc <- c_qualityg_status[j,]$TotalWells /
+            c_qualityg[i,]$TotalWells
+    }
+  } # end for j
+} # end for i
+
+# now subset for functional wells only
+funcw <- subset(c_qualityg_status, label == "functional")
+
+# barplot percentages for each group
+mp <- barplot(funcw$perc, names.arg = funcw$quality_group, 
+        main = ('Percentage of Wells Functioning: Quality_Group'), ylim = c(0, 1), col =
+          'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, funcw$perc, labels = 
+       format(round(funcw$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for functional needs repair wells only
+func_nr <- subset(c_qualityg_status, label == "functional needs repair")
+
+# barplot percentages for each group
+mp <- barplot(func_nr$perc, names.arg = func_nr$quality_group, 
+        main = ('Percentage of Wells Functional Needs Repair: Quality_Group'), ylim =
+          c(0,1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, func_nr$perc, labels = 
+       format(round(func_nr$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for non functional wells only
+non_func <- subset(c_qualityg_status, label == "non functional")
+
+# barplot percentages for each group
+mp <- barplot(non_func$perc, names.arg = non_func$quality_group, 
+        main = ('Percentage of Wells Non Functional: Quality_Group'), ylim = 
+          c(0, 1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, non_func$perc, labels = 
+       format(round(non_func$perc, 3), 4),
+        pos = 3, cex = .75)
+```
+
+The __quality_group__ variable appears to represent a narrowing of the breadth of values available via the __water_quality__ variable. In fact, the number of wells in the __good__ category is identical to those of the __water_quality__ variable's __soft__ category, while the __fluoride__ and __salty__ categories have been created by summing the __fluoride__, __fluoride_abandoned__, and __salty__ and __salty_abandoned__ categories belonging to the __water_quality__ variable. As such, this variable may be duplicative/redundant and therefore can likely be ignored for purposes of model building.
+
+### Quantity & Quantity_Group
+
+```{r, echo = FALSE}
+# quantity
+c_quantity_status <- arrange(summarise(group_by(t, quantity, label), 
+                     TotalWells = length(unique(id)) ), sort(quantity) )
+c_quantity_status
+
+# init percentage column
+c_quantity_status$perc <- 0
+
+# reorder master list alphabetically
+c_quantity <- c_quantity[order(c_quantity$quantity),]
+
+# calc percentages for each label relative to each variable value
+for (i in 1:nrow(c_quantity)){
+  for (j in 1:nrow(c_quantity_status)) {
+    
+    if(c_quantity_status[j,]$quantity == 
+       c_quantity[i,]$quantity) {
+          c_quantity_status[j,]$perc <- c_quantity_status[j,]$TotalWells /
+            c_quantity[i,]$TotalWells
+    }
+  } # end for j
+} # end for i
+
+# now subset for functional wells only
+funcw <- subset(c_quantity_status, label == "functional")
+
+# barplot percentages for each group
+mp <- barplot(funcw$perc, names.arg = funcw$quantity, 
+        main = ('Percentage of Wells Functioning: Quantity'), ylim = c(0, 1), col =
+          'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, funcw$perc, labels = 
+       format(round(funcw$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for functional needs repair wells only
+func_nr <- subset(c_quantity_status, label == "functional needs repair")
+
+# barplot percentages for each group
+mp <- barplot(func_nr$perc, names.arg = func_nr$quantity, 
+        main = ('Percentage of Wells Functional Needs Repair: Quantity'), ylim =
+          c(0,1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, func_nr$perc, labels = 
+       format(round(func_nr$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for non functional wells only
+non_func <- subset(c_quantity_status, label == "non functional")
+
+# barplot percentages for each group
+mp <- barplot(non_func$perc, names.arg = non_func$quantity, 
+        main = ('Percentage of Wells Non Functional: Quantity'), ylim = 
+          c(0, 1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, non_func$perc, labels = 
+       format(round(non_func$perc, 3), 4),
+        pos = 3, cex = .75)
+```
+
+The __quantity__ and __quantity_group__ variables have identical categories with identical numbers of wells assigned to each. As such, the __quantity_group__ variable is likely to be redundant/duplicative and can therefore be ignored for purposes of model building. 
+
+Of the five categories, the __dry__ category offers the smallest percentage of functional wells with only 2.5% indicated as such. By contrast, more than 65% of wells categorized as having a __quantity__ of __enough__ are functional.
+
+
+### Source
+
+```{r, echo = FALSE}
+# source
+c_source_status <- arrange(summarise(group_by(t, source, label), 
+                     TotalWells = length(unique(id)) ), sort(source) )
+c_source_status
+
+# init percentage column
+c_source_status$perc <- 0
+
+# reorder master list alphabetically
+c_source <- c_source[order(c_source$source),]
+
+# calc percentages for each label relative to each variable value
+for (i in 1:nrow(c_source)){
+  for (j in 1:nrow(c_source_status)) {
+    
+    if(c_source_status[j,]$source == 
+       c_source[i,]$source) {
+          c_source_status[j,]$perc <- c_source_status[j,]$TotalWells /
+            c_source[i,]$TotalWells
+    }
+  } # end for j
+} # end for i
+
+# now subset for functional wells only
+funcw <- subset(c_source_status, label == "functional")
+
+# barplot percentages for each group
+mp <- barplot(funcw$perc, names.arg = funcw$source, 
+        main = ('Percentage of Wells Functioning: Source'), ylim = c(0, 1), col =
+          'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, funcw$perc, labels = 
+       format(round(funcw$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for functional needs repair wells only
+func_nr <- subset(c_source_status, label == "functional needs repair")
+
+# barplot percentages for each group
+mp <- barplot(func_nr$perc, names.arg = func_nr$source, 
+        main = ('Percentage of Wells Functional Needs Repair: Source'), ylim =
+          c(0,1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, func_nr$perc, labels = 
+       format(round(func_nr$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for non functional wells only
+non_func <- subset(c_source_status, label == "non functional")
+
+# barplot percentages for each group
+mp <- barplot(non_func$perc, names.arg = non_func$source, 
+        main = ('Percentage of Wells Non Functional: Source'), ylim = 
+          c(0, 1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, non_func$perc, labels = 
+       format(round(non_func$perc, 3), 4),
+        pos = 3, cex = .75)
+```
+
+The __spring__ category of the __source__ variable offers the highest percentage of functional wells and also represents the largest __source__ category with 17,021 wells. By contrast, while the __lake__ category performs poorly, it represents only 765 of the 59,400 pumps represented in the data set.
+
+Of the other categories represented, 57.8% of __source__ = __dam__ are also not functioning.
+
+### Source Type
+
+```{r, echo = FALSE}
+# source_type
+c_source_t_status <- arrange(summarise(group_by(t, source_type, label), 
+                     TotalWells = length(unique(id)) ), sort(source_type) )
+c_source_t_status
+
+# init percentage column
+c_source_t_status$perc <- 0
+
+# reorder master list alphabetically
+c_source_t <- c_source_t[order(c_source_t$source_type),]
+
+# calc percentages for each label relative to each variable value
+for (i in 1:nrow(c_source_t)){
+  for (j in 1:nrow(c_source_t_status)) {
+    
+    if(c_source_t_status[j,]$source_type == 
+       c_source_t[i,]$source_type) {
+          c_source_t_status[j,]$perc <- c_source_t_status[j,]$TotalWells /
+            c_source_t[i,]$TotalWells
+    }
+  } # end for j
+} # end for i
+
+# now subset for functional wells only
+funcw <- subset(c_source_t_status, label == "functional")
+
+# barplot percentages for each group
+mp <- barplot(funcw$perc, names.arg = funcw$source_type, 
+        main = ('Percentage of Wells Functioning: Source Type'), ylim = c(0, 1), col =
+          'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, funcw$perc, labels = 
+       format(round(funcw$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for functional needs repair wells only
+func_nr <- subset(c_source_t_status, label == "functional needs repair")
+
+# barplot percentages for each group
+mp <- barplot(func_nr$perc, names.arg = func_nr$source_type, 
+        main = ('Percentage of Wells Functional Needs Repair: Source Type'), ylim =
+          c(0,1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, func_nr$perc, labels = 
+       format(round(func_nr$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for non functional wells only
+non_func <- subset(c_source_t_status, label == "non functional")
+
+# barplot percentages for each group
+mp <- barplot(non_func$perc, names.arg = non_func$source_type, 
+        main = ('Percentage of Wells Non Functional: Source Type'), ylim = 
+          c(0, 1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, non_func$perc, labels = 
+       format(round(non_func$perc, 3), 4),
+        pos = 3, cex = .75)
+```
+
+The __source_type__ variable appears to be a composite of the __source__ variable with some of the categories from __source__ having been summed together to create new but similar category names. As such, this variable may be redundant / duplicative and might possibly be ignored for purposes of model building.
+
+### Source_Class
+
+```{r, echo = FALSE}
+# source_class
+c_source_c_status <- arrange(summarise(group_by(t, source_class, label), 
+                     TotalWells = length(unique(id)) ), sort(source_class) )
+c_source_c_status
+
+# init percentage column
+c_source_c_status$perc <- 0
+
+# reorder master list alphabetically
+c_source_c <- c_source_c[order(c_source_c$source_class),]
+
+# calc percentages for each label relative to each variable value
+for (i in 1:nrow(c_source_c)){
+  for (j in 1:nrow(c_source_c_status)) {
+    
+    if(c_source_c_status[j,]$source_class == 
+       c_source_c[i,]$source_class) {
+          c_source_c_status[j,]$perc <- c_source_c_status[j,]$TotalWells /
+            c_source_c[i,]$TotalWells
+    }
+  } # end for j
+} # end for i
+
+# now subset for functional wells only
+funcw <- subset(c_source_c_status, label == "functional")
+
+# barplot percentages for each group
+mp <- barplot(funcw$perc, names.arg = funcw$source_class, 
+        main = ('Percentage of Wells Functioning: Source Class'), ylim = c(0, 1), 
+        col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, funcw$perc, labels = 
+       format(round(funcw$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for functional needs repair wells only
+func_nr <- subset(c_source_c_status, label == "functional needs repair")
+
+# barplot percentages for each group
+mp <- barplot(func_nr$perc, names.arg = func_nr$source_class, 
+        main = ('Percentage of Wells Functional Needs Repair: Source Class'), ylim =
+          c(0,1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, func_nr$perc, labels = 
+       format(round(func_nr$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for non functional wells only
+non_func <- subset(c_source_c_status, label == "non functional")
+
+# barplot percentages for each group
+mp <- barplot(non_func$perc, names.arg = non_func$source_class, 
+        main = ('Percentage of Wells Non Functional: Source Class'), ylim = 
+          c(0, 1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, non_func$perc, labels = 
+       format(round(non_func$perc, 3), 4),
+        pos = 3, cex = .75)
+```
+
+The __source_class__ variable appears to be a binary indicator, with both known categories appearing to be equally likely to offer a functional well, though __groundwater__ wells appear to be more likely to be completely non-functional.
+
+
+### Waterpoint Type
+
+```{r, echo = FALSE}
+# waterpoint_type
+c_waterp_t_status <- arrange(summarise(group_by(t, waterpoint_type, label), 
+                     TotalWells = length(unique(id)) ), sort(waterpoint_type) )
+c_waterp_t_status
+
+# init percentage column
+c_waterp_t_status$perc <- 0
+
+# reorder master list alphabetically
+c_waterp_t <- c_waterp_t[order(c_waterp_t$waterpoint_type),]
+
+# calc percentages for each label relative to each variable value
+for (i in 1:nrow(c_waterp_t)){
+  for (j in 1:nrow(c_waterp_t_status)) {
+    
+    if(c_waterp_t_status[j,]$waterpoint_type == 
+       c_waterp_t[i,]$waterpoint_type) {
+          c_waterp_t_status[j,]$perc <- c_waterp_t_status[j,]$TotalWells /
+            c_waterp_t[i,]$TotalWells
+    }
+  } # end for j
+} # end for i
+
+# now subset for functional wells only
+funcw <- subset(c_waterp_t_status, label == "functional")
+
+# barplot percentages for each group
+mp <- barplot(funcw$perc, names.arg = 
+                funcw$waterpoint_type, 
+        main = ('Percentage of Wells Functioning: Waterpoint_Type'), ylim = c(0, 1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, funcw$perc, labels = 
+       format(round(funcw$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for functional needs repair wells only
+func_nr <- subset(c_waterp_t_status, label == "functional needs repair")
+
+# barplot percentages for each group
+mp <- barplot(func_nr$perc, names.arg = 
+                func_nr$waterpoint_type, 
+        main = ('Percentage of Wells Functional Needs Repair: Waterpoint_Type'), ylim = c(0, 1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, func_nr$perc, labels = 
+       format(round(func_nr$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for non functional wells only
+non_func <- subset(c_waterp_t_status, label == "non functional")
+
+# barplot percentages for each group
+mp <- barplot(non_func$perc, names.arg = 
+                non_func$waterpoint_type, 
+        main = ('Percentage of Wells Non Functional: Waterpoint_Type'), ylim = c(0, 1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, non_func$perc, labels = 
+       format(round(non_func$perc, 3), 4),
+        pos = 3, cex = .75)
+```
+
+The __waterpoint_type__ variable's values indicate that pumps having a __dam__ as their waterpoint are the most likely to be functional while __communal standpipe multiple__ appear to be the least likely to be functional. However, there are only 7 pumps having a __waterpoint_type__ of __dam__. In fact, the most common __waterpoint_type__ is __communal standpipe__ followed by __hand pump__. Both of those categories appear to perform well relative to the overall functional benchmark of 54.3%. 
+
+
+### Waterpoint Type Group
+
+```{r, echo = FALSE}
+# -----------------------------------------------------------
+# waterpoint_type_group
+c_waterp_t_g_status <- arrange(summarise(group_by(t, waterpoint_type_group, label), 
+                     TotalWells = length(unique(id)) ), sort(waterpoint_type_group) )
+c_waterp_t_g_status
+
+
+# init percentage column
+c_waterp_t_g_status$perc <- 0
+
+# reorder master list alphabetically
+c_waterp_t_g <- c_waterp_t_g[order(c_waterp_t_g$waterpoint_type_group),]
+
+# calc percentages for each label relative to each variable value
+for (i in 1:nrow(c_waterp_t_g)){
+  for (j in 1:nrow(c_waterp_t_g_status)) {
+    
+    if(c_waterp_t_g_status[j,]$waterpoint_type_group == 
+       c_waterp_t_g[i,]$waterpoint_type_group) {
+          c_waterp_t_g_status[j,]$perc <- c_waterp_t_g_status[j,]$TotalWells /
+            c_waterp_t_g[i,]$TotalWells
+    }
+  } # end for j
+} # end for i
+
+# now subset for functional wells only
+funcw <- subset(c_waterp_t_g_status, label == "functional")
+
+# barplot percentages for each group
+mp <- barplot(funcw$perc, names.arg = 
+                funcw$waterpoint_type_group, 
+        main = ('Percentage of Wells Functioning: Waterpoint_Type_Group'), ylim = c(0, 1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, funcw$perc, labels = 
+       format(round(funcw$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for functional needs repair wells only
+func_nr <- subset(c_waterp_t_g_status, label == "functional needs repair")
+
+# barplot percentages for each group
+mp <- barplot(func_nr$perc, names.arg = 
+                func_nr$waterpoint_type_group, 
+        main = ('Percentage of Wells Functional Needs Repair: Waterpoint_Type_Group'), ylim = c(0, 1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, func_nr$perc, labels = 
+       format(round(func_nr$perc, 3), 4),
+        pos = 3, cex = .75)
+
+
+# now subset for non functional wells only
+non_func <- subset(c_waterp_t_g_status, label == "non functional")
+
+# barplot percentages for each group
+mp <- barplot(non_func$perc, names.arg = 
+                non_func$waterpoint_type_group, 
+        main = ('Percentage of Wells Non Functional: Waterpoint_Type_Group'), ylim = c(0, 1), col = 'yellow', las = 2,
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, non_func$perc, labels = 
+       format(round(non_func$perc, 3), 4),
+        pos = 3, cex = .75)
+```
+
+The __waterpoint_type_group__ appears to be a composite of the __waterpoint_type__ variable, with the sole difference being the two standpipe groups have been summed together. As such, this variable is likely duplicative / redundant and might possibly be ignored for purposes of model building.
+
+
 
 # Convert categoricals with strings to factors (where feasible)
+
+This would be done after data prep
 
 ```{r}
 # tanz$basin <- factor(tanz$basin)
@@ -315,4 +2384,5 @@ head(c_waterp_t_g, n = 10)
 
 Now generate summary data for data set
 ```{r}
-summary(tanz)
+# summary(tanz)
+```

@@ -11,6 +11,24 @@ NOTE: The full analysis used to generate this summary can be found here:
 
 - https://github.com/jtopor/DDO-TNZ/blob/master/tanz-dataexp.Rmd
 
+# Complete Cases
+
+On an initial read of the data we find the following:
+
+- 53281 complete cases
+
+- 6119 rows with NA's
+
+- 10.3% of rows have NA's
+
+However, many of the categorical variables are comprised of character strings that are simply blank. Such strings should logically be considered as missing (or "NA"). As such, after converting the blank strings to "NA" values we find the following:
+
+- Only 27813 complete cases
+
+- 31587 rows with NA's
+
+- 53.17% of rows have NA's
+
 
 # Summary of Variables in Data Set
 
@@ -26,6 +44,8 @@ NOTE: The full analysis used to generate this summary can be found here:
 
 
 ### Categorical variables
+
+Please note that the NA totals listed below were calculated *after* converting blank character strings to __NA__ values
 
 | Categorical Variable | Distinct Values | NA's | Comments                      |
 |----------------------|-----------------|------|-------------------------------|

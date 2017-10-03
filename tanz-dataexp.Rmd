@@ -1,15 +1,34 @@
 ---
-title: "Capstone Project Data Exploration"
+title: "Tanzania Data Exploration"
 author: "James Topor"
 date: "September 22, 2017"
-output: html_document
+output:
+  html_document:
+    highlight: tango
+    theme: cerulean
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: yes
+      number_sections: yes
+      smooth_scroll: no
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
 ---
+
 ```{r, echo = FALSE, warning=FALSE, message=FALSE}
 library(knitr)
 library(tidyr)
 library(dplyr)
+library(nnet) # for multinom logistic regression
+library(class) # for KNN
 ```
 
+
+# Data Exploration
+
+## Load Training Data
 ```{r}
 # load tanzania training data file
 tanz <- read.csv("https://raw.githubusercontent.com/jtopor/DDO-TNZ/master/Tanz-Training-Data.csv", header = TRUE, stringsAsFactors = FALSE)
@@ -20,10 +39,19 @@ length(unique(tanz$id))
 # summary(tanz)
 ```
 
+
+## Load Training Labels
+```{r}
+# load tanzania training data labels
+tanz_trl <- read.csv("https://raw.githubusercontent.com/jtopor/DDO-TNZ/master/Tanz-Training-Labels.csv", header = TRUE, stringsAsFactors = FALSE)
+
+tanz$label <- tanz_trl$status_group
+```
+
 ## Determine how many rows have complete cases and how many have NA's:
 
 ```{r}
-# count number of rows with no NA's = 53281
+# count number of rows with no NA's = 27813
 (c.cases <- sum(complete.cases(tanz)) )
 
 # now calculate number of rows with NA's = 6119
@@ -32,7 +60,6 @@ length(unique(tanz$id))
 na.cases / nrow(tanz)
 ```
 
-
 - 53281 complete cases
 
 - 6119 rows with NA's
@@ -40,7 +67,7 @@ na.cases / nrow(tanz)
 - 10.3% of rows have NA's
 
 
-## Calculate Number of NA's for Each Variable
+## Calculate Number of NA's for Each Variable (Including Blank Strings)
 
 ```{r}
 # fill in all blank entries with NA
@@ -48,321 +75,57 @@ tanz[,][tanz[,] == ""] <- NA
 
 # count NA's in each column
 kable(colSums(is.na(tanz)), col.names = c("NA Count") )
+
+# recount number of rows with no NA's = 27813
+(c.cases <- sum(complete.cases(tanz)) )
+
+# now calculate number of rows with NA's = 31587
+(na.cases <- nrow(tanz) - c.cases)
+
+na.cases / nrow(tanz)
 ```
 
-## Calculate Total Number of Wells for each distinct categorical variable value
+- Only 27813 complete cases after filling in blank string values with NA
 
-```{r}
+- 31587 rows with NA's
 
-# Calc total number of wells for each distinct variable value. Results can be
-# used for bar plots + for determining whether categorical variables can feasibly be 
-# converted to a factor
+- 53.17% of rows have NA's
 
-# count distinct funder = 1898, 3635 NA
-length(unique(tanz$funder))
+## Count number of wells for each wells status value
 
-
-# calc number of wells per funder
-c_funders <- arrange(summarise(group_by(tanz, funder), 
+```{r, echo = FALSE}
+# calc number of wells with each label
+c_labels <- arrange(summarise(group_by(tanz, label), 
                      TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_funders, n = 10)
-
-# -------------------------------
-# count distinct installer = 2146, 3655 NA
-length(unique(tanz$installer))
-
-# calc number of wells per installer
-c_installers <- arrange(summarise(group_by(tanz, installer), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_installers, n = 10)
-
-# -------------------------------
-# count distinct wpt_name = 37400, 3563 = none (which is not the same as NA)
-length(unique(tanz$wpt_name))
-
-# calc number of wells per wpt_name
-c_wptn <- arrange(summarise(group_by(tanz, wpt_name), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_wptn, n = 10)
-
-# -------------------------------
-# count distinct num_private = 65
-length(unique(tanz$num_private))
-
-# calc number of wells per wpt_name
-c_npriv <- arrange(summarise(group_by(tanz, num_private), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_npriv, n = 10)
-
-# -------------------------------
-# count distinct basin = 9
-length(unique(tanz$basin))
-
-# calc number of wells per basin
-c_basin <- arrange(summarise(group_by(tanz, basin), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_basin, n = 10)
-
-
-# -------------------------------
-# count distinct subvillage = 19288, 371 NA's
-length(unique(tanz$subvillage))
-
-# calc number of wells per subvillage
-c_subv <- arrange(summarise(group_by(tanz, subvillage), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_subv, n = 10)
-
-# -------------------------------
-# count distinct region = 21
-length(unique(tanz$region))
-
-# calc number of wells per region
-c_region <- arrange(summarise(group_by(tanz, region), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_region, n = 10)
-
-# -------------------------------
-# count distinct region_code = 27
-length(unique(tanz$region_code))
-
-# calc number of wells per region_code
-c_region_code <- arrange(summarise(group_by(tanz, region_code), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_region_code, n = 10)
-
-# -------------------------------
-# count distinct district_code = 20
-length(unique(tanz$district_code))
-
-# calc number of wells per basin
-c_distc <- arrange(summarise(group_by(tanz, district_code), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_distc, n = 10)
-
-# -------------------------------
-# count distinct lga = 125
-length(unique(tanz$lga))
-
-# calc number of wells per lga
-c_lga <- arrange(summarise(group_by(tanz, lga), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_lga, n = 10)
-
-
-# -------------------------------
-# count distinct ward = 2092
-length(unique(tanz$ward))
-
-# calc number of wells per ward
-c_ward <- arrange(summarise(group_by(tanz, ward), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_ward, n = 10)
-
-# -------------------------------
-# count public_meeting = 3
-length(unique(tanz$public_meeting))
-
-# calc number of wells per ward
-c_pubmeet <- arrange(summarise(group_by(tanz, public_meeting), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_pubmeet, n = 10)
-
-# -------------------------------
-# count distinct recorded_by = 1
-length(unique(tanz$recorded_by))
-
-
-# -------------------------------
-# count distinct scheme_management = 13, 3877 NA's
-length(unique(tanz$scheme_management))
-
-# calc number of wells per scheme_management
-c_scheme_m <- arrange(summarise(group_by(tanz, scheme_management), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_scheme_m, n = 10)
-
-
-# -------------------------------
-# count distinct scheme_name = 2697, 28,166 NA's
-length(unique(tanz$scheme_name))
-
-# calc number of wells per scheme_name
-c_scheme_n <- arrange(summarise(group_by(tanz, scheme_name), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_scheme_n, n = 10)
-
-# -------------------------------
-# count distinct permit = 3, 28,166 NA's
-length(unique(tanz$permit))
-
-# calc number of wells per scheme_name
-c_permit <- arrange(summarise(group_by(tanz, permit), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_permit, n = 10)
-
-
-# -------------------------------
-# count distinct construction_year = 55, 20,709 NA's
-length(unique(tanz$construction_year))
-
-# calc number of wells per construction_year
-c_const_y <- arrange(summarise(group_by(tanz, construction_year), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_const_y, n = 10)
-
-
-# -------------------------------
-# count distinct extraction_type = 18
-length(unique(tanz$extraction_type))
-
-# calc number of wells per extraction_type
-c_extract_t <- arrange(summarise(group_by(tanz, extraction_type), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_extract_t, n = 10)
-
-# -------------------------------
-# count distinct extraction_type_group = 13
-length(unique(tanz$extraction_type_group))
-
-# calc number of wells per extraction_type
-c_extract_tg <- arrange(summarise(group_by(tanz, extraction_type_group), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_extract_tg, n = 10)
-
-# -------------------------------
-# count distinct extraction_type_class = 7, 20,709 NA's
-length(unique(tanz$extraction_type_class))
-
-# calc number of wells per extraction_type_class
-c_extract_t_c <- arrange(summarise(group_by(tanz, extraction_type_class), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_extract_t_c, n = 10)
-
-# -------------------------------
-# count distinct management = 12
-length(unique(tanz$management))
-
-# calc number of wells per management
-c_mgmt <- arrange(summarise(group_by(tanz, management), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_mgmt, n = 10)
-
-# -------------------------------
-# count distinct management_group = 5
-length(unique(tanz$management_group))
-
-# calc number of wells per management_group
-c_mgmt_grp <- arrange(summarise(group_by(tanz, management_group), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_mgmt_grp, n = 10)
-
-
-# -------------------------------
-# count distinct payment = 7
-length(unique(tanz$payment))
-
-# calc number of wells per payment
-c_paymt <- arrange(summarise(group_by(tanz, payment), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_paymt, n = 10)
-
-
-# -------------------------------
-# count distinct payment_type = 7; on failure appears to replace "pay when scheme fails" from payment variable
-length(unique(tanz$payment_type))
-
-# calc number of wells per payment_type
-c_paymt_t <- arrange(summarise(group_by(tanz, payment_type), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_paymt_t, n = 10)
-
-# -------------------------------
-# count distinct water_quality = 8
-length(unique(tanz$water_quality))
-
-# calc number of wells per water_quality
-c_waterq <- arrange(summarise(group_by(tanz, water_quality), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_waterq, n = 10)
-
-
-# -------------------------------
-# count distinct quality_group = 6
-length(unique(tanz$quality_group))
-
-# calc number of wells per quality_group
-c_qualityg <- arrange(summarise(group_by(tanz, quality_group), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_qualityg, n = 10)
-
-# -------------------------------
-# count distinct quantity = 5
-length(unique(tanz$quantity))
-
-# calc number of wells per quantity
-c_quantity <- arrange(summarise(group_by(tanz, quantity), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_quantity, n = 10)
-
-# -------------------------------
-# count distinct quantity_group = 5; appears to be identical to "quantity" variable
-length(unique(tanz$quantity_group))
-
-# calc number of wells per quantity_group
-c_quantityg <- arrange(summarise(group_by(tanz, quantity_group), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_quantityg, n = 10)
-
-# -------------------------------
-# count distinct source = 10
-length(unique(tanz$source))
-
-# calc number of wells per source
-c_source <- arrange(summarise(group_by(tanz, source), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_source, n = 10)
-
-
-# -------------------------------
-# count distinct source_type = 10
-length(unique(tanz$source))
-
-# calc number of wells per source_type
-c_source_t <- arrange(summarise(group_by(tanz, source_type), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_source_t, n = 10)
-
-# -------------------------------
-# count distinct source_class = 3
-length(unique(tanz$source_class))
-
-# calc number of wells per source_class
-c_source_c <- arrange(summarise(group_by(tanz, source_class), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_source_c, n = 10)
-
-
-# -------------------------------
-# count distinct waterpoint_type = 7
-length(unique(tanz$waterpoint_type))
-
-# calc number of wells per waterpoint_type
-c_waterp_t <- arrange(summarise(group_by(tanz, waterpoint_type), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_waterp_t, n = 10)
-
-# -------------------------------
-# count distinct waterpoint_type_group = 6
-length(unique(tanz$waterpoint_type_group))
-
-# calc number of wells per waterpoint_type_group
-c_waterp_t_g <- arrange(summarise(group_by(tanz, waterpoint_type_group), 
-                     TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_waterp_t_g, n = 10)
+head(c_labels, n = 10)
+
+# calc percentages for each label
+functional <- c_labels[1,2] / nrow(tanz)
+
+n_func <- c_labels[2,2] / nrow(tanz)
+
+func_n_rep <- 1 - (functional + n_func)
+
+# barplot
+rel_percs <- c(functional[1,1], n_func[1,1], func_n_rep[1,1] )
+
+mp <- barplot(rel_percs, names.arg = c('Functional', 'Non-Functional',
+        'Functional-Needs-Rep'), 
+        main = ('Well Status Percentages'), ylim = c(0, 1), col = 'yellow',
+        cex.main=.75, cex.lab=.75, cex.axis=0.75, cex.names=.75 
+)
+        
+# write the percentage values above the individual bars in the plot
+text(mp, rel_percs, labels = format(round(rel_percs, 3), 4),
+        pos = 3, cex = .75)
 ```
 
-# Summary of Variables in Data Set
+The plot above provides a benchmark of sorts for purposes of evaluating each of the variables to be discussed below. The plot tells us that 54.3% of all wells are functional, 38.4% are non-functional, and 7.3% are functional but in need of repair. We can use these metrics to partially assess each of the individual categorical variable values found within the data set; as we analyze each variable value, we can determine whether or not the percentage of wells pertaining to that variable value either exceeds or falls short of the overall performance metrics plotted above. For example, those exceeding the 54.3% "functional" metric may share characteristics that poorer performing wells may benefit from emulating / replicating. 
+
+
+## Summary of Variables in Data Set
+
+The data set is comprised of a total of 40 variables, six of which are numeric, 31 of which are categorical, and three of which are strictly for administrative/reference purposes. Each class of variable is summarized in the tables shown below.
 
 ### Numeric Variables
 
@@ -373,16 +136,16 @@ head(c_waterp_t_g, n = 10)
 | population        | 21,381 of 59.400 records = "0"      |
 | longitude         | 1,812 zero values: likely invalid   |
 | latitude          | 1,819 values < -1: likely invalid   |
+| num_private       | 58,643 of 59.400 records = "0"      |
 
 
 ### Categorical variables
 
 | Categorical Variable | Distinct Values | NA's | Comments                      |
 |----------------------|-----------------|------|-------------------------------|
-| funder               | 1898            | 3635 |                               |
-| installer            | 2146            | 3655 |                               |
-| wpt_name             | 37400           | 0    |                               |
-| num_private          | 65              | 0    |                               |
+| funder               | 1898            | 3635 | 3582 NA's coinc. w installer  |
+| installer            | 2146            | 3655 | 3582 NA's coinc. w funder     |
+| wpt_name             | 37400           | 0    | 3563 vals = "none"            |
 | basin                | 9               | 0    |                               |
 | subvillage           | 19288           | 371  |                               |
 | region               | 21              | 0    |                               |
@@ -390,10 +153,10 @@ head(c_waterp_t_g, n = 10)
 | district_code        | 20              | 0    |                               |
 | lga                  | 125             | 0    |                               |
 | ward                 | 2092            | 0    |                               |
-| public_meeting       | 3               | 3334 | binary                        |
+| public_meeting       | 3               | 3334 | binary + NA's                 |
 | scheme_management    | 13              | 3877 |                               |
 | scheme_name          | 2697            | 28166|                               |
-| permit               | 3               | 3056 | binary                        |
+| permit               | 3               | 3056 | binary + NA's                 |
 | construction_year    | 55              | 20709|                               |
 | extraction_type      | 18              | 0    |                               |
 | extraction_type_group| 13              | 0    | composite of extr_type        |
@@ -407,8 +170,8 @@ head(c_waterp_t_g, n = 10)
 | quantity             | 5               | 0    |                               |
 | quantity_group       | 5               | 0    | dupe of quantity              |
 | source               | 10              | 0    |                               |
-| source_type          | 10              | 0    | dupe of source                |
-| source_class         | 3               | 0    | binary                        |
+| source_type          | 7               | 0    | composite of source           |
+| source_class         | 3               | 0    | binary + "unknow              |
 | waterpoint_type      | 7               | 0    |                               |
 | waterpoint_type_group| 6               | 0    | composite of waterpoint_type  |
 
@@ -421,10 +184,12 @@ head(c_waterp_t_g, n = 10)
 | date_recorded            | date      |
 | recorded_by              | char str  |
 
+The administrative variables shown above have no predictive value and will be ignored for purposes of model building. The __id__ variable serves as a unique identifier for each data record within the data set. The __date_recorded__ variable indicates the date on which the each record presented within the data was collected, while the __recorded_by__ variable contains the name of the survey firm that collected the data.
 
-# Numeric Variables
+The numeric and categorical variables listed above are explored in detail below.
 
-A brief analysis of each of the numeric variables contained within the data set.
+
+## Exploration of Numeric Variables
 
 ### amount_tsh
 
@@ -442,7 +207,117 @@ In fact, analysis of the __amount_tsh__ variable indicates that 41,639 of the 59
 length(tanz$amount_tsh[tanz$amount_tsh == 0])
 ```
 
-Further analysis shows that 14,771 of the non-zero values fall within the range of (1 : 1000):
+Analysis of the __amount_tsh = 0__ values relative to various geographic variables provided within the data set reveals a significant amount of clustering of such values by subvillage, ward, lga, district_code, and region. The table below provides a summary of this clustering.
+
+```{r, echo = FALSE, eval = FALSE}
+
+gp <- arrange(summarise(group_by(tanz, subvillage), 
+                     MissingTsh = sum(amount_tsh == 0) ), desc(MissingTsh) )
+
+gp
+
+gp_p <- arrange(summarise(group_by(tanz, subvillage), 
+                     HaveTsh = sum(amount_tsh != 0) ), desc(HaveTsh) )
+
+gp_p
+
+# count num of subvills with no alt = 13357 / 19288 villages have no amount_tsh value
+(svill_no_alt <- sum(gp_p$HaveTsh == 0) )
+
+
+# try ward
+gp2 <- arrange(summarise(group_by(tanz, ward), 
+                     MissingTsh = sum(amount_tsh == 0) ), desc(MissingTsh) )
+
+gp2
+
+gp2_p <- arrange(summarise(group_by(tanz, ward), 
+                     HaveTsh = sum(amount_tsh != 0) ), desc(HaveTsh) )
+
+gp2_p
+
+# count num of wards with no alt = 1090 / 2092 wards have no amount_tsh value
+(ward_no_alt <- sum(gp2_p$HaveTsh == 0) )
+
+
+# try district_code
+gp3 <- arrange(summarise(group_by(tanz, district_code), 
+                     MissingTsh = sum(amount_tsh == 0) ), desc(MissingTsh) )
+
+gp3
+
+gp3_p <- arrange(summarise(group_by(tanz, district_code), 
+                     HaveTsh = sum(amount_tsh != 0) ), desc(HaveTsh) )
+
+gp3_p
+
+# count num of district_codes with no alt = 2 / 20 district_codes have no amount_tsh value
+(dc_no_alt <- sum(gp3_p$HaveTsh == 0) )
+
+
+# try region
+gp4 <- arrange(summarise(group_by(tanz, region), 
+                     MissingTsh = sum(amount_tsh == 0) ), desc(MissingTsh) )
+
+gp4
+
+gp4_p <- arrange(summarise(group_by(tanz, region), 
+                     HaveTsh = sum(amount_tsh != 0) ), desc(HaveTsh) )
+
+gp4_p
+
+# count num of regions with no alt = 4 / 21 regions have no amount_tsh value
+(region_no_alt <- sum(gp4_p$HaveTsh == 0) )
+
+
+# try basin
+gp5 <- arrange(summarise(group_by(tanz, basin), 
+                     MissingTsh = sum(amount_tsh == 0) ), desc(MissingTsh) )
+
+gp5
+
+gp5_p <- arrange(summarise(group_by(tanz, basin), 
+                     HaveTsh = sum(amount_tsh != 0) ), desc(HaveTsh) )
+
+gp5_p
+
+# count num of basins with no alt = 0 basins have no amount_tsh value
+(basin_no_alt <- sum(gp5_p$HaveTsh == 0) )
+
+# try lga
+gp6 <- arrange(summarise(group_by(tanz, lga), 
+                     MissingTsh = sum(amount_tsh == 0) ), desc(MissingTsh) )
+
+gp6
+
+gp6_p <- arrange(summarise(group_by(tanz, lga), 
+                     HaveTsh = sum(amount_tsh != 0) ), desc(HaveTsh) )
+
+gp6_p
+
+# count num of lgas with no alt = 40 / 125 lga's have no amount_tsh
+(lga_no_alt <- sum(gp6_p$HaveTsh == 0) )
+
+# memory cleanup
+rm(gp, gp_p, gp2, gp2_p, gp3, gp3_p, gp4, gp4_4, gp5, gp5_p, gp6, gp6_p)
+rm(svill_no_alt, ward_no_alt, dc_no_alt, region_no_alt, basin_no_alt)
+````
+
+| Geographic Var.    | Num of categories w No gps_h Value |
+|--------------------|------------------------------------|
+| subvillage         | 13357 / 19288 (69.2%)              |
+| ward               | 1090 / 2092 (52.1%)                |
+| lga                | 40 / 125 (32%)                     |
+| district_code      | 2 / 20 (10%)                       |
+| region             | 4 / 21 (19%)                       |
+
+As shown in the table, more than two-thirds of subvillages and one-half wards represented within the data set have no non-zero __amount_tsh__ values, as do 32% of lga's, 10% of district_codes and 19% of regions. Such clustering might suggest a systemic data collection issue within those geographic areas, e.g., perhaps the wells located within those areas were not actually visited by the surveying company that compiled the data. Alternatively, the total static head for many wells may simply not be known if it was not recorded when the pump was originally installed. 
+
+In any event, the lack of accurate data values across so many geographic indicators strongly suggests that imputing the missing data values via geographic indicators will not be possible. 
+
+Further analysis is required to determine whether the remaining zero values are in fact valid data values or if they merely represent the lack of an accurate total static head measurement for the associated wells. However, given the widespread lack of accurate measurements found for these geographic areas it seems highly likely that the zero values are simply invalid.
+
+Analysis shows that 14,771 of the non-zero values fall within the range of (1 : 1000):
 
 ```{r}
 atsh <- tanz$amount_tsh[tanz$amount_tsh > 0 & tanz$amount_tsh <= 1000]
@@ -451,6 +326,35 @@ hist(atsh, col = 'yellow', main = "Histogram of amount_tsh values (1:1000)")
 ```
 
 This leaves slightly less than 3,000 records having __amount_tsh__ values that exceed 1000. Such values should be investigated to determine whether they are in fact valid values for the variable.
+
+The __extration_type_class__ and __waterpoint_type_group__ categorical variables are each at least somewhat indicative of the type of well deployed at each waterpoint. Assuming similar types of wells generally share somewhat similar physical characteristics and limitations, there may be a relationship we can infer between these two variables and the __amount_tsh__ value each well may reasonably have. The tables below summarize the median non-zero __amount_tsh__ values for each category of the __extration_type_class__ and __waterpoint_type_group__ variables. 
+
+```{r}
+# isolate non-zero amount_tsh records
+t_atsh <- subset(tanz, amount_tsh !=0)
+
+# get the median amount_tsh value for each extraction_type_class
+etc_mtsh <- arrange(summarise(group_by(t_atsh, extraction_type_class), 
+                     MedTsh = median(amount_tsh) ), desc(MedTsh) )
+
+etc_mtsh
+
+
+# check avg tsh for extraction_type_class
+# mean(tanz$amount_tsh[which(tanz$extraction_type_class == 'gravity')])
+
+# get the median amount_tsh value for each waterpoint_type_group
+wptg_mtsh <- arrange(summarise(group_by(t_atsh, waterpoint_type_group), 
+                     MedTsh = median(amount_tsh) ), desc(MedTsh) )
+
+wptg_mtsh
+
+# memory cleanup
+rm(t_atsh)
+
+```
+
+Since each well represented within the data set has known values for both of these variables, the median values shown in the tables above may allow us to impute a reasonable value for each instance of __amount_tsh = 0__ within the data set.
 
 
 ### gps_height
@@ -479,7 +383,124 @@ The histogram indicates the presence of a significant number of zero values for 
 length(tanz$gps_height[tanz$gps_height == 0])
 ```
 
-Further analysis is required to determine whether these are in fact valid data values or if they merely represent the lack of an accurate altitude measurement for the associated wells.
+1812 of these zero values occur when values for both latitude and longitude are apparently unknown:
+
+```{r}
+nrow(subset(tanz, latitude > -1  & longitude == 0 & gps_height == 0) )
+```
+
+The fact that those zero values coincide with missing latitude and longitude coordinates stongly suggests that they are also representative of missing data.
+
+Analysis of the presence of __gps_height = 0__ values relative to various geographic variables provided within the data set reveals a significant amount of clustering of such values by subvillage, ward, lga, district_code, and region. The table below provides a summary of this clustering.
+
+```{r, echo = FALSE, eval = FALSE}
+
+gp <- arrange(summarise(group_by(tanz, subvillage), 
+                     MissingAlt = sum(gps_height == 0) ), desc(MissingAlt) )
+
+gp
+
+gp_p <- arrange(summarise(group_by(tanz, subvillage), 
+                     HaveAlt = sum(gps_height != 0) ), desc(HaveAlt) )
+
+gp_p
+
+# count num of subvills with no alt = 7265 / 19288 villages have no gps_height value
+(svill_no_alt <- sum(gp_p$HaveAlt == 0) )
+
+
+# try ward
+gp2 <- arrange(summarise(group_by(tanz, ward), 
+                     MissingAlt = sum(gps_height == 0) ), desc(MissingAlt) )
+
+gp2
+
+gp2_p <- arrange(summarise(group_by(tanz, ward), 
+                     HaveAlt = sum(gps_height != 0) ), desc(HaveAlt) )
+
+gp2_p
+
+# count num of wards with no alt = 776 / 2092 wards have no gps_height value
+(ward_no_alt <- sum(gp2_p$HaveAlt == 0) )
+
+
+
+# try district_code
+gp3 <- arrange(summarise(group_by(tanz, district_code), 
+                     MissingAlt = sum(gps_height == 0) ), desc(MissingAlt) )
+
+gp3
+
+gp3_p <- arrange(summarise(group_by(tanz, district_code), 
+                     HaveAlt = sum(gps_height != 0) ), desc(HaveAlt) )
+
+gp3_p
+
+# count num of district_codes with no alt = 2 / 20 district_codes have no gps_height value
+(dc_no_alt <- sum(gp3_p$HaveAlt == 0) )
+
+
+# try region
+gp4 <- arrange(summarise(group_by(tanz, region), 
+                     MissingAlt = sum(gps_height == 0) ), desc(MissingAlt) )
+
+gp4
+
+gp4_p <- arrange(summarise(group_by(tanz, region), 
+                     HaveAlt = sum(gps_height != 0) ), desc(HaveAlt) )
+
+gp4_p
+
+# count num of regions with no alt = 4 / 21 regions have no gps_height value
+(region_no_alt <- sum(gp4_p$HaveAlt == 0) )
+
+
+# try basin
+gp5 <- arrange(summarise(group_by(tanz, basin), 
+                     MissingAlt = sum(gps_height == 0) ), desc(MissingAlt) )
+
+gp5
+
+gp5_p <- arrange(summarise(group_by(tanz, basin), 
+                     HaveAlt = sum(gps_height != 0) ), desc(HaveAlt) )
+
+gp5_p
+
+# count num of basins with no alt = 0 basins have no gps_height value
+(basin_no_alt <- sum(gp5_p$HaveAlt == 0) )
+
+# try lga
+gp6 <- arrange(summarise(group_by(tanz, lga), 
+                     MissingAlt = sum(gps_height == 0) ), desc(MissingAlt) )
+
+gp6
+
+gp6_p <- arrange(summarise(group_by(tanz, lga), 
+                     HaveAlt = sum(gps_height != 0) ), desc(HaveAlt) )
+
+gp6_p
+
+# count num of lgas with no alt = 42 / 125 lga's have no gps_height
+(lga_no_alt <- sum(gp6_p$HaveAlt == 0) )
+
+# memory cleanup
+rm(gp, gp_p, gp2, gp2_p, gp3, gp3_p, gp4, gp4_4, gp5, gp5_p, gp6, gp6_p)
+rm(svill_no_alt, ward_no_alt, dc_no_alt, region_no_alt, basin_no_alt)
+````
+
+| Geographic Var.    | Num of categories w No gps_h Value |
+|--------------------|------------------------------------|
+| subvillage         | 7265 / 19288 (37.6%)               |
+| ward               | 776 / 2092 (37.1%)                 |
+| lga                | 42 / 125 (33.6%)                   |
+| district_code      | 2 / 20 (10%)                       |
+| region             | 4 / 21 (19%)                       |
+
+As shown in the table, more than one third of subvillages, wards and lga's represented within the data set have no non-zero __gps_height__ values, as do 10% of district_codes and 19% of regions. Such clustering suggests a systemic data collection issue within those geographic areas, e.g., perhaps the wells located within those areas were not actually visited by the surveying company that compiled the data. If in fact the physical wells had been visited during data collection, use of a basic, inexpensive altimeter could have provided the required altitude measurement.
+
+In any event, the lack of accurate data values across so many geographic indicators strongly suggests that imputing the missing data values via geographic indicators will not be possible. 
+
+Further analysis is required to determine whether the remaining zero values are in fact valid data values or if they merely represent the lack of an accurate altitude measurement for the associated wells. However, given the widespread lack of accurate measurements found for these geographic areas it seems highly likely that the zero values are simply invalid.
 
 ### population
 
@@ -493,13 +514,131 @@ boxplot(tanz$population, col = "yellow")
 hist(tanz$population, col = "yellow")
 ```
 
-Our analysis indicates the presence of a significant number of zero values for the variable. Further analysis finds a total of 21,381 data records containing a zero value for the __population__ variable. 
+Our analysis indicates the presence of 21,381 data records containing a zero value for the __population__ variable. 
 
 ```{r}
 length(tanz$population[tanz$population == 0])
 ```
 
-While it may in fact be realistic to find a well located in an unpopulated area, it seems highly unlikely that such a large number of wells would reside in locations that are devoid of human habitants. As such, many of these zero values are likely to be invalid.
+While it may in fact be realistic to find a well located in an unpopulated area, it seems highly unlikely that such a large number of wells would reside in locations that are devoid of human inhabitants. As such, many of these zero values are likely to be invalid.
+
+As with the __amount_tsh__ and __gps_height__ variables, we find a significant amount of clustering relative to the subvillage, ward, lga, district_code, and region geographic variables, as shown in the table below.
+
+```{r, echo = FALSE, eval = FALSE}
+
+gp <- arrange(summarise(group_by(tanz, subvillage), 
+                     MissingPop = sum(population == 0) ), desc(MissingPop) )
+
+gp
+
+gp_p <- arrange(summarise(group_by(tanz, subvillage), 
+                     HavePop = sum(population != 0) ), desc(HavePop) )
+
+gp_p
+
+# count num of subvills with no alt = 7291 / 19288 villages have no population value
+(svill_no_yr <- sum(gp_p$HavePop == 0) )
+
+# try ward
+gp2 <- arrange(summarise(group_by(tanz, ward), 
+                     MissingPop = sum(population == 0) ), desc(MissingPop) )
+
+gp2
+
+gp2_p <- arrange(summarise(group_by(tanz, ward), 
+                     HavePop = sum(population != 0) ), desc(HavePop) )
+
+gp2_p
+
+# count num of wards with no alt = 779 / 2092 wards have no population value
+(ward_no_alt <- sum(gp2_p$HavePop == 0) )
+
+
+# try district_code
+gp3 <- arrange(summarise(group_by(tanz, district_code), 
+                     MissingPop = sum(population == 0) ), desc(MissingPop) )
+
+gp3
+
+gp3_p <- arrange(summarise(group_by(tanz, district_code), 
+                     HavePop = sum(population != 0) ), desc(HavePop) )
+
+gp3_p
+
+# count num of district_codes with no alt = 2 / 20 district_codes have no population value
+(dc_no_alt <- sum(gp3_p$HavePop == 0) )
+
+
+# try region
+gp4 <- arrange(summarise(group_by(tanz, region), 
+                     MissingPop = sum(population == 0) ), desc(MissingPop) )
+
+gp4
+
+gp4_p <- arrange(summarise(group_by(tanz, region), 
+                     HavePop = sum(population != 0) ), desc(HavePop) )
+
+gp4_p
+
+# count num of regions with no alt = 4 / 21 regions have no population value
+(region_no_alt <- sum(gp4_p$HavePop == 0) )
+
+
+# try basin
+gp5 <- arrange(summarise(group_by(tanz, basin), 
+                     MissingPop = sum(population == 0) ), desc(MissingPop) )
+
+gp5
+
+gp5_p <- arrange(summarise(group_by(tanz, basin), 
+                     HavePop = sum(population != 0) ), desc(HavePop) )
+
+gp5_p
+
+# count num of basins with no alt = 0 basins have no population value
+(basin_no_alt <- sum(gp5_p$HavePop == 0) )
+
+# try lga
+gp6 <- arrange(summarise(group_by(tanz, lga), 
+                     MissingPop = sum(population == 0) ), desc(MissingPop) )
+
+gp6
+
+gp6_p <- arrange(summarise(group_by(tanz, lga), 
+                     HavePop = sum(population != 0) ), desc(HavePop) )
+
+gp6_p
+
+# count num of basins with no alt = 42 / 125 lga's have no construction_year
+(lga_no_alt <- sum(gp6_p$HavePop == 0) )
+
+# memory cleanup
+rm(gp, gp_p, gp2, gp2_p, gp3, gp3_p, gp4, gp4_4, gp5, gp5_p, gp6, gp6_p)
+rm(svill_no_alt, ward_no_alt, dc_no_alt, region_no_alt, basin_no_alt)
+````
+
+| Geographic Var.    | Num of Categories w No popu Value |
+|--------------------|-----------------------------------|
+| subvillage         | 7291 / 19288 (37.8%)              |
+| ward               | 779 / 2092 (37.2%)                |
+| lga                | 42 / 125 (33.6%)                  |
+| district_code      | 2 / 20 (20%)                      |
+| region             | 4 / 21 (19%)                      |
+
+The statistics are very similar, though not identical, to those derived for the __amount_tsh__ and __gps_height__ variables, and once again suggest the possibility of a systemic data collection issue on the part of the surveying firm that collected the data. Furthermore, the lack of accurate data values across so many geographic indicators strongly suggests that imputing the missing data values via geographic indicators will not be possible. 
+
+Analysis of the non-zero population figures reveals a highly right-skewed distribution, with a median value of 150 and a maximum value of 30,500.
+
+```{r}
+summary(tanz$population[tanz$population > 0])
+
+boxplot(tanz$population[tanz$population > 0], col = "yellow")
+
+hist(tanz$population[tanz$population > 0], col = "yellow")
+```
+
+The summary statistics and plots suggest that the vast majority of the wells are located in the vicinity of small villages comprised of less than 500 inhabitants. This suggests that it may be feasible to impute the missing __population__ values for predictive modeling purposes via use of the median. However, such an approach may have an adverse effect on the distribution of the variable.
+
 
 ### Longitude & Latitude
 
@@ -526,77 +665,131 @@ length(tanz$longitude[tanz$longitude == 0])
 length(tanz$latitude[tanz$latitude > -1])
 ```
 
-Further investigation is required to determine whether these zero and near-zero values are valid within the context of the data set.
-
-
-
-# Load Training Labels
-
+A cross referencing of the two variables shows that every instance of a zero __longitude__ value does in fact correspond with an instance of a (< -1) __latitude__ value:
 
 ```{r}
-# load tanzania training data labels
-tanz_trl <- read.csv("https://raw.githubusercontent.com/jtopor/DDO-TNZ/master/Tanz-Training-Labels.csv", header = TRUE, stringsAsFactors = FALSE)
-
-# append labels to training data
-# make a copy of the original data before appending
-t <- tanz
-
-t$label <- tanz_trl$status_group
+nrow(subset(tanz, latitude > -1  & longitude == 0))
 ```
 
-# Count number of wells for each label
+The fact that these values appear to be coincident strongly suggests that they are simply invalid data values. However, for each record within the data set we are provided with a variety of other geographical indicators, including __ward__, __district_code__, __region__, and __basin__. Given the relatively small number of invalid __longitude__ and __latitude__ values present within the data set, a reasonable approach to their imputation could be based on calculating the mean or median __longitude__ and __latitude__ values for a data record's __ward__ or __region__ and using those values as the imputed values for the missing data.
 
-```{r, echo = FALSE}
-# calc number of wells with each label
-c_labels <- arrange(summarise(group_by(t, label), 
+
+### num_private
+
+No clear explanation is provided regarding what the __num_private__ variable is meant to represent. Summary statistics and plots show a heavily right-skewed distribution with zero values dominating the variable throughout the data set.
+
+```{r}
+summary(tanz$num_private)
+boxplot(as.numeric(tanz$num_private), col = "yellow")
+hist(as.numeric(tanz$num_private), col = 'yellow')
+```
+
+In fact, analysis reveals that only 757 of the data set's 59,400 __num_private__ values are non-zero:
+
+```{r}
+length(tanz$num_private[which(tanz$num_private > 0)])
+```
+
+Unfortunately, the lack of an explanation of the meaning of the variable means we have no way of knowing whether the large number of zero values represent legitimate data values or simply serve as an indicator of missing data.
+
+The variable is comprised of a total of 65 distinct values. The number of wells pertaining to the ten most frequently occurring of those values is summarized below.
+
+```{r}
+# count distinct num_private = 65
+length(unique(tanz$num_private))
+
+# calc number of wells per wpt_name
+c_npriv <- arrange(summarise(group_by(tanz, num_private), 
                      TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_labels, n = 10)
-
-# calc percentages for each label
-functional <- c_labels[1,2] / nrow(tanz)
-
-n_func <- c_labels[2,2] / nrow(tanz)
-
-func_n_rep <- 1 - (functional + n_func)
-
-# barplot
-rel_percs <- c(functional[1,1], n_func[1,1], func_n_rep[1,1] )
-
-mp <- barplot(rel_percs, names.arg = c('Functional', 'Non-Functional',
-        'Functional-Needs-Rep'), 
-        main = ('Well Status Percentages'), ylim = c(0, 1), col = 'yellow',
-        cex.main=.75, cex.lab=.75, cex.axis=0.75, cex.names=.75 
-)
-        
-# write the percentage values above the individual bars in the plot
-text(mp, rel_percs, labels = format(round(rel_percs, 3), 4),
-        pos = 3, cex = .75)
+head(c_npriv, n = 10)
 ```
 
-The plot above provides a benchmark of sorts for purposes of evaluating each of the variables to be discussed below. The plot tells us that 54.3% of all wells are functional, 38.4% are non-functional, and 7.3% are functional but in need of repair. We can use these metrics to partially assess each of the individual categorical variable values found within the data set; as we analyze each variable value, we can determine whether or not the percentage of wells pertaining to that variable value either exceeds or falls short of the overall performance metrics plotted above. For example, those exceeding the 54.3% "functional" metric may share characteristics that poorer performing wells might benefit from emulating / replicating. 
 
-# Categorical Variables: Status of Wells for Each Variable Value
+## Exploration of Categorical Variables
 
-Plots are only feasible for categorical variables with < 60 possible values. As such, the following categorical variables are excluded from the analysis shown below:
+### funder
 
-- funder
-- installer
-- wpt_name
-- num_private
-- subvillage
-- lga
-- ward
-- scheme_name
+The __funder__ variable represents the name of the organization that funded the installation of a given well. A total of 1,898 distinct values for the variable are found within the data set, along with 3,635 missing values. The top 20 funders by well count are shown in the table below.
 
-Also please note that variable values are sorted alphabetically in the plots shown below.
+```{r}
+# count distinct funder = 1898, 3635 NA
+length(unique(tanz$funder))
 
-### Basin
+# calc number of wells per funder
+c_funders <- arrange(summarise(group_by(tanz, funder), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_funders, n = 20)
+```
+
+As we can see in the small sample of __funder__ values shown above, there appears to be a lack of consistency in the application of __funder__ names throughout the data set. For example, in the table above we note the presence of "Government of Tanzania", "Ministry of Water", and "Water". It is quite possible that each of these values refer to the Tanzanian government. Such inconsistency may be unnecessarily increasing the number of distinct __funder__ values while simultaneously dilluting the accuracy of the data records. We will explore whether it is possibile to address such issues as part of our Data Preparation efforts.
+
+### installer
+
+The __installer__ variable represents the name of the organization that installed a given well. A total of 2,146 distinct values for the variable are found within the data set, along with 3,655 missing values. The top 20 installers by well count are shown in the table below.
+
+```{r}
+# count distinct installer = 2146, 3655 NA
+length(unique(tanz$installer))
+
+# calc number of wells per installer
+c_installers <- arrange(summarise(group_by(tanz, installer), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_installers, n = 20)
+```
+
+As with the __funder__ variable, there appears to be a lack of consistency in the application of __installer__ names throughout the data set. For example, in the table above we note the presence of ""Government of Tanzania", "Ministry of Water", and "Water""Government" and "Central Government", as well as both "Commu" and "Community". It is quite possible that each of these pairs values refer to a single installer. As with the __funder__ variable,  We will explore whether it is possibile to address such issues as part of our Data Preparation efforts.
+
+
+### Funder & Installer: Overlap of Missing Values
+
+A cursory review of the data set indicates that many instances of missing data within the __funder__ variable are coincident with missing values for the __installer__ variable. In fact, we find that 3,582 of the 3,635 instances of __funder__ = NA occur when the __installer__ variable is also unknown.
+
+```{r}
+f_i <- subset(tanz, is.na(tanz$funder) & is.na(tanz$installer))
+nrow(f_i)
+```
+
+The fact that nearly all of the missing __funder__ and __installer__ values are coincident may preclude any imputation for missing values for the two variables.
+
+
+### wpt_name
+
+The __wpt_name__ variable represents a name that has been assigned to given waterpoint. A total of 37,400 distinct values for the variable are found within the data set, along with 3,563 instances where no defined name could be identified.
+
+```{r}
+# count distinct wpt_name = 37400, 3563 = none (which is not the same as NA)
+length(unique(tanz$wpt_name))
+
+# calc number of wells per wpt_name
+c_wptn <- arrange(summarise(group_by(tanz, wpt_name), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_wptn, n = 20)
+```
+
+Given the large number of possible __wpt_name__ values as a proportion of the total records contained within the data set (37400 / 59400), the __wpt_name__ variable likely offers limited, if any, value for predictive modeling purposes.
+
+
+### basin
+
+The __basin__ variable represents the name of the geographic water basin within which a given well is located. The summary statistics shown below indicate a total of 9 distinct water basins within the data set, with each record having a valid value. The number of wells found per basin is detailed in the table below.
+
+```{r}
+# count distinct basin = 9
+length(unique(tanz$basin))
+
+# calc number of wells per basin
+c_basin <- arrange(summarise(group_by(tanz, basin), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_basin, n = 10)
+```
+
+Plots for the __basin__ variable show a wide variance in the proportions of functional wells between regions: Three regions (Lake Nyasa, Pangani, Rufiji) have more than 60% of their wells functioning while the Southern Coast region has only 37.2% of its wells functioning. In fact, five of the nine regions fail to achieve the overall "functional" metric of 54.3%. The underlying reasons for these disparities should be explored to determine whether or not the underperforming basins can be improved via the application of well management methods/practices being employed within the outperforming basins.
 
 ```{r, echo = FALSE}
 # basin
-c_basin_status <- arrange(summarise(group_by(t, basin, label), 
+c_basin_status <- arrange(summarise(group_by(tanz, basin, label), 
                      TotalWells = length(unique(id)) ), sort(basin) )
-c_basin_status
+# c_basin_status
 
 # init percentage column
 c_basin_status$perc <- 0
@@ -664,15 +857,45 @@ text(mp, non_func$perc, labels =
         pos = 3, cex = .70)
 ```
 
-Plots for the __basin__ variable show a wide variance in the proportions of functional wells between regions: Three regions (Lake Nyasa, Pangani, Rufiji) have more than 60% of their wells functioning while the Southern Coast region has only 37.2% of its wells functioning. In fact, five of the nine regions fail to achieve the overall "functional" metric of 54.3%. The underlying reasons for these disparities should be explored to determine whether or not the underperforming basins can be improved via the application of well management methods/practices being employed within the outperforming basins.
+
+### Subvillage
+
+The __subvillage__ variable represents the name of the geographic subvillage within which a given well is located. Summary statistics indicate a total of 19,288 distinct subvillage values within the data set, with 371 missing values. The 20 subvillages with the largest number of wells are shown below.
+
+```{r}
+# count distinct subvillage = 19288, 371 NA's
+length(unique(tanz$subvillage))
+
+# calc number of wells per subvillage
+c_subv <- arrange(summarise(group_by(tanz, subvillage), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_subv, n = 20)
+```
+
+Given the large number of possible __subvillage__ values as a proportion of the total records contained within the data set (19288 / 59400), the variable may offer limited value for predictive modeling purposes.
+
 
 ### Region
 
+The __region__ variable represents the name of the geographic region in Tanzania within which a given well is located. The summary statistics shown below indicate a total of 21 distinct regions within the data set, with each record having a valid value. The 20 regions having the largest number of well installations are detailed in the table below.
+
+```{r}
+# count distinct region = 21
+length(unique(tanz$region))
+
+# calc number of wells per region
+c_region <- arrange(summarise(group_by(tanz, region), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_region, n = 20)
+```
+
+The functional well disparities found within the various regions exceed those seen within the __basin__ variable: we see one region (Iringa) having more than 78.2% of its wells functional while the region of Lindi has only 29.8% functional, a nearly 50 point difference. In fact, of the 21 regions listed, only 9 exceed the overall functional metric of 54.3%. Furthermore, we find the region of Kigoma has 21.4% of its wells as "functional needs repair", a percentage that greatly exceeds all other regions. 
+
 ```{r, echo = FALSE}
 # region
-c_region_status <- arrange(summarise(group_by(t, region, label), 
+c_region_status <- arrange(summarise(group_by(tanz, region, label), 
                      TotalWells = length(unique(id)) ), sort(region) )
-c_region_status
+# c_region_status
 
 # init percentage column
 c_region_status$perc <- 0
@@ -740,15 +963,91 @@ text(mp, non_func$perc, labels =
         pos = 3, cex = .70)
 ```
 
-The functional well disparities found within the various regions exceed those seen within the __basin__ variable: we see one region (Iringa) having more than 78.2% of its wells functional while the region of Lindi has only 29.8% functional, a nearly 50 point difference. In fact, of the 21 regions listed, only 9 exceed the overall functional metric of 54.3%. Furthermore, we find the region of Kigoma has 21.4% of its wells as "functional needs repair", a percentage that greatly exceeds all other regions. 
+Analysis of individual regions reveals that the four regions of Dodoma, Kagera, Mbeya and Tabora all appear to have no non-zero values for the following variables:
+
+- amount_tsh
+- gps_height
+- construction_year
+- num_private
+- population
+
+```{r}
+# Dodoma
+unique(tanz$population[tanz$region == 'Dodoma'])
+unique(tanz$construction_year[tanz$region == 'Dodoma'])
+unique(tanz$gps_height[tanz$region == 'Dodoma'])
+unique(tanz$amount_tsh[tanz$region == 'Dodoma'])
+unique(tanz$num_private[tanz$region == 'Dodoma'])
+
+# Kagera
+unique(tanz$population[tanz$region == 'Kagera'])
+unique(tanz$construction_year[tanz$region == 'Kagera'])
+unique(tanz$gps_height[tanz$region == 'Kagera'])
+unique(tanz$amount_tsh[tanz$region == 'Kagera'])
+unique(tanz$num_private[tanz$region == 'Kagera'])
+
+# Mbeya
+unique(tanz$population[tanz$region == 'Mbeya'])
+unique(tanz$construction_year[tanz$region == 'Mbeya'])
+unique(tanz$gps_height[tanz$region == 'Mbeya'])
+unique(tanz$amount_tsh[tanz$region == 'Mbeya'])
+unique(tanz$num_private[tanz$region == 'Mbeya'])
+
+# Tabora
+unique(tanz$population[tanz$region == 'Tabora'])
+unique(tanz$construction_year[tanz$region == 'Tabora'])
+unique(tanz$gps_height[tanz$region == 'Tabora'])
+unique(tanz$amount_tsh[tanz$region == 'Tabora'])
+unique(tanz$num_private[tanz$region == 'Tabora'])
+```
+
+As shown below, these 4 regions comprise 12,115 of the 59,400 records in the data set (20.39%), including 514 of the unique wards and 4644 of the unique subvillages.  This lack of non-zero values makes it highly unlikely that we will be able to derive imputed values for the zero values of the five variables listed above using the geographical indicators provided within the data set.
+
+```{r}
+# count num recs w/ these 4 regions = 12115 => 20.39% of all records
+all_z <- nrow(subset(tanz, region == 'Tabora' | region == 'Mbeya' | region == 'Kagera' |
+              region == 'Dodoma'))
+
+all_z/nrow(tanz)
+
+# count all records in these regions
+all_zdf <- subset(tanz, region == 'Tabora' | region == 'Mbeya' | region == 'Kagera' |
+              region == 'Dodoma')
+
+length(unique(all_zdf$district_code)) # 10 unique district codes
+length(unique(all_zdf$ward)) # 514 unique wards
+length(unique(all_zdf$subvillage)) # 4644 unique subvillages
+length(unique(all_zdf$lga)) # 27 unique lga's
+```
+
+```{r, echo = FALSE}
+# memory cleanup
+rm(all_zdf, all_z)
+```
 
 ### Region Code
 
+The __region_code__ variable provides an integer code for the Tanzanian region within which a given well is located. The summary statistics shown below indicate a total of 27 distinct region codes within the data set, with each record having a valid value. The 20 region codes having the largest number of well installations are summarized in the table below.
+
+```{r, echo = FALSE}
+# count distinct region_code = 27
+length(unique(tanz$region_code))
+
+# calc number of wells per region_code
+c_region_code <- arrange(summarise(group_by(tanz, region_code), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_region_code, n = 20)
+```
+
+It is unclear why we find 27 __region_code__ values while there are only 20 possible values for the __region__ variable. It is possibile that some subset of the region codes have either simply been entered incorrectly or were deliberately entered incorrectly due to uncertainty over the correct __region_code__ value to apply to a given record.
+
+Plotting the status of wells relative to each value of the __region_code__ variable shows even greater disparities between geographic regions for functional wells, from a low of 8.7% in Region 8 to nearly 97% in Region 24. Region 16 shows an unusually large 21.4% of its wells having a status of "functional needs repair" while Region 40's single well (100% of the wells in that region) is not functioning.
+
 ```{r, echo = FALSE}
 # region
-c_regionc_status <- arrange(summarise(group_by(t, region_code, label), 
+c_regionc_status <- arrange(summarise(group_by(tanz, region_code, label), 
                      TotalWells = length(unique(id)) ) )
-c_regionc_status
+# c_regionc_status
 
 # init percentage column
 c_regionc_status$perc <- 0
@@ -816,16 +1115,31 @@ text(mp, non_func$perc, labels =
         pos = 3, cex = .70)
 ```
 
-Plotting the status of wells relative to the __region_code__ variable shows even greater disparities between geographic regions for functional wells, from a low of 8.7% in Region 8 to nearly 97% in Region 24. Region 16 shows an unusually large 21.4% of its wells having a status of "functional needs repair" while Region 40 has fully 100% of its wells not functioning.
-
 
 ### Construction Year
 
+The __construction_year__ variable indicates the year in which a given well was installed. The summary statistics shown below indicate a total of 54 distinct non-zero construction year values ranging from 1960 through 2013, with 20,709 records lacking a valid value. The year values having the largest number of well installations are summarized in the table below.
+
+```{r}
+# get range of non-zero values for variable
+summary(tanz$construction_year[which(tanz$construction_year > 0)])
+
+# count distinct construction_year = 55, 20,709 NA's
+length(unique(tanz$construction_year))
+
+# calc number of wells per construction_year
+c_const_y <- arrange(summarise(group_by(tanz, construction_year), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_const_y, n = 20)
+```
+
+Plotting the status of wells by construction year allows us to conclude that relatively newer wells are generally more likely to be functional than are relatively older wells. While this is rather unsurprising from an intuitive perspective, confirmation of such intuition can prove to be useful when crafting a predictive model. 
+
 ```{r, echo = FALSE}
 # construction_year
-c_const_y_status <- arrange(summarise(group_by(t, construction_year, label), 
+c_const_y_status <- arrange(summarise(group_by(tanz, construction_year, label), 
                      TotalWells = length(unique(id)) ), sort(construction_year) )
-c_const_y_status
+# c_const_y_status
 
 # init percentage column
 c_const_y_status$perc <- 0
@@ -893,16 +1207,134 @@ mp <- barplot(non_func$perc, names.arg = non_func$construction_year,
 #        pos = 3, cex = .75)
 ```
 
-Plotting the status of wells by construction year allows us to conclude that relatively newer wells are generally more likely to be functional than are relatively older wells. While this is rather unsurprising from an intuitive perspective, confirmation of such intuition can prove to be useful when crafting a predictive model. 
+As with the __amount_tsh__, __gps_height__, and __population__ variables, we find a significant amount of clustering relative to the subvillage, ward, lga, district_code, and region geographic variables, as shown in the table below.
+
+```{r, echo = FALSE, eval = FALSE}
+
+gp <- arrange(summarise(group_by(tanz, subvillage), 
+                     MissingYear = sum(construction_year == 0) ), desc(MissingYear) )
+
+gp
+
+gp_p <- arrange(summarise(group_by(tanz, subvillage), 
+                     HaveYear = sum(construction_year != 0) ), desc(HaveYear) )
+
+gp_p
+
+# count num of subvills with no alt = 7208 / 19288 villages have no construction_year value
+(svill_no_yr <- sum(gp_p$HaveYear == 0) )
+
+
+# try ward
+gp2 <- arrange(summarise(group_by(tanz, ward), 
+                     MissingYear = sum(construction_year == 0) ), desc(MissingYear) )
+
+gp2
+
+gp2_p <- arrange(summarise(group_by(tanz, ward), 
+                     HaveYear = sum(construction_year != 0) ), desc(HaveYear) )
+
+gp2_p
+
+# count num of wards with no alt = 749 / 2092 wards have no gps_height value
+(ward_no_alt <- sum(gp2_p$HaveYear == 0) )
+
+# try district_code
+gp3 <- arrange(summarise(group_by(tanz, district_code), 
+                     MissingYear = sum(construction_year == 0) ), desc(MissingYear) )
+
+gp3
+
+gp3_p <- arrange(summarise(group_by(tanz, district_code), 
+                     HaveYear = sum(construction_year != 0) ), desc(HaveYear) )
+
+gp3_p
+
+# count num of district_codes with no alt = 4 / 20 district_codes have no gps_height value
+(dc_no_alt <- sum(gp3_p$HaveYear == 0) )
+
+
+# try region
+gp4 <- arrange(summarise(group_by(tanz, region), 
+                     MissingYear = sum(construction_year == 0) ), desc(MissingYear) )
+
+gp4
+
+gp4_p <- arrange(summarise(group_by(tanz, region), 
+                     HaveYear = sum(construction_year != 0) ), desc(HaveYear) )
+
+gp4_p
+
+# count num of regions with no alt = 4 / 21 regions have no gps_height value
+(region_no_alt <- sum(gp4_p$HaveYear == 0) )
+
+
+# try basin
+gp5 <- arrange(summarise(group_by(tanz, basin), 
+                     MissingYear = sum(construction_year == 0) ), desc(MissingYear) )
+
+gp5
+
+gp5_p <- arrange(summarise(group_by(tanz, basin), 
+                     HaveYear = sum(construction_year != 0) ), desc(HaveYear) )
+
+gp5_p
+
+# count num of basins with no alt = 0 basins have no gps_height value
+(basin_no_alt <- sum(gp5_p$HaveYear == 0) )
+
+# try lga
+gp6 <- arrange(summarise(group_by(tanz, lga), 
+                     MissingYear = sum(construction_year == 0) ), desc(MissingYear) )
+
+gp6
+
+gp6_p <- arrange(summarise(group_by(tanz, lga), 
+                     HaveYear = sum(construction_year != 0) ), desc(HaveYear) )
+
+gp6_p
+
+# count num of basins with no alt = 41 / 125 lga's have no construction_year
+(lga_no_alt <- sum(gp6_p$HaveYear == 0) )
+
+
+# memory cleanup
+rm(gp, gp_p, gp2, gp2_p, gp3, gp3_p, gp4, gp4_4, gp5, gp5_p)
+rm(svill_no_alt, ward_no_alt, dc_no_alt, region_no_alt, basin_no_alt)
+````
+
+| Geographic Var.    | Num of Recs w No c_yr Value |
+|--------------------|-----------------------------|
+| subvillage         | 7208 / 19288 (37.3%)        |
+| ward               | 749 / 2092 (35.8%)          |
+| lga                | 41 / 125 (32.8%)            |
+| district_code      | 4 / 20 (20%)                |
+| region             | 4 / 21 (19%)                |
+
+The statistics are very similar, though not identical, to those derived for the __amount_tsh__, __gps_height__ and __population__ variables, and once again suggest the possibility of a systemic data collection issue on the part of the surveying firm that collected the data. Furthermore, the lack of accurate data values across so many geographic indicators strongly suggests that imputing the missing data values via geographic indicators will not be possible.
 
 
 ### District Code
 
+The __district_code__ variable provides an integer coding of the Tanzanian district within which a given well is located. The summary statistics shown below indicate a total of 20 distinct district codes within the data set, with each record having a valid value. The number of wells per district code is summarized in the table below.
+
+```{r}
+# count distinct district_code = 20
+length(unique(tanz$district_code))
+
+# calc number of wells per basin
+c_distc <- arrange(summarise(group_by(tanz, district_code), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_distc, n = 20)
+```
+
+The __district_code__ variable is yet another geographic label, and as with the others we've analyzed (e.g., __basin__, __region__, etc.) we see a wide disparity in the percentage of functional wells, ranging from a low of 17.4% for district 0 to a hight of 83.3% in district 67. Only 9 of the 20 districts exceed the overall 54.3% functional well metric. Furthermore we see that six districts' "non functional" well percentages exceed 60%.
+
 ```{r, echo = FALSE}
 # district code
-c_distc_status <- arrange(summarise(group_by(t, district_code, label), 
+c_distc_status <- arrange(summarise(group_by(tanz, district_code, label), 
                      TotalWells = length(unique(id)) ), sort(district_code) )
-head(c_distc_status, n = 10)
+# head(c_distc_status, n = 20)
 
 # init percentage column
 c_distc_status$perc <- 0
@@ -970,16 +1402,28 @@ text(mp, non_func$perc, labels =
         pos = 3, cex = .75)
 ```
 
-The __district_code__ variable is yet another geographic label, and as with the others we've analyzed (e.g., __basin__, __region__, etc.) we see a wide disparity in the percentage of functional wells, ranging from a low of 17.4% for district 0 to a hight of 83.3% in district 67. Only 9 of the 20 districts exceed the overall 54.3% functional well metric. Furthermore we see that six districts' "non functional" well percentages exceed 60%.
-
 
 ### Public Meeting
 
+The __public_meeting__ variable is essentially a binary variable with 3,334 instances of the variable's value being unknown. A summary of the variable's values is shown below.
+
+```{r}
+# count public_meeting = 3
+length(unique(tanz$public_meeting))
+
+# calc number of wells per ward
+c_pubmeet <- arrange(summarise(group_by(tanz, public_meeting), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_pubmeet, n = 10)
+```
+
+The plots below show that, in general, wells having a public meeting value of __TRUE__ are more likely to be functional than those that have not. 
+
 ```{r, echo = FALSE}
 # public_meeting
-c_pubm_status <- arrange(summarise(group_by(t, public_meeting, label), 
+c_pubm_status <- arrange(summarise(group_by(tanz, public_meeting, label), 
                      TotalWells = length(unique(id)) ) )
-head(c_pubm_status, n = 10)
+# head(c_pubm_status, n = 10)
 
 # fill in NA's so data can be plotted
 c_pubmeet$public_meeting[is.na(c_pubmeet$public_meeting)] <- "unknown"
@@ -1051,17 +1495,56 @@ text(mp, non_func$perc, labels =
         pos = 3, cex = .75)
 ```
 
-The __public_meeting__ variable is essentially a binary variable. The plots above show that, in general, wells that benefited from a public meeting are more likely to be functional than those that have not. 
+### lga
 
+The __lga__ variable provides another Tanzania-specific geographic identifier within which a given well is located. The summary statistics shown below indicate a total of 125 lga values within the data set, with each record having a valid value. The 20 lga's having the largest number of well installations are summarized in the table below.
+
+```{r}
+# count distinct lga = 125
+length(unique(tanz$lga))
+
+# calc number of wells per lga
+c_lga <- arrange(summarise(group_by(tanz, lga), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_lga, n = 20)
+```
+
+### Ward
+
+The __ward__ variable represents the name of the geographic ward within which a given well is located. The summary statistics shown below indicate a total of 2092 distinct ward values within the data set, with each record having a valid value. The 20 wards having the largest number of well installations are summarized in the table below.
+
+```{r}
+# count distinct ward = 2092
+length(unique(tanz$ward))
+
+# calc number of wells per ward
+c_ward <- arrange(summarise(group_by(tanz, ward), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_ward, n = 20)
+```
 
 ### Scheme Management
+
+The __scheme_management__ variable represents the type of the party responsible for managing a given well.  The summary statistics shown below indicate a total of 13 distinct scheme management values within the data set, with 3,877 records having no valid value. The number of well installations per type of scheme management is summarized in the table below.
+
+```{r}
+# count distinct scheme_management = 13, 3877 NA's
+length(unique(tanz$scheme_management))
+
+# calc number of wells per scheme_management
+c_scheme_m <- arrange(summarise(group_by(tanz, scheme_management), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_scheme_m, n = 20)
+```
+
+Plots for the __scheme_management__ variable show that (excluding "None" since it applies to only a single well) that while the __Water Board__ scheme seems to yield the largest percentage of functional wells, that scheme is used for a relatively small number (2,748) of the 59,400 wells. By contrast, the __VWC__ scheme is used for nearly 36,800 wells. So while a majority of the schemes exceed the 54.3% overall functional metric, the vast majority of the wells themselves do not benefit from those schemes. 
 
 ```{r, echo = FALSE}
 
 # scheme_management
-c_scheme_m_status <- arrange(summarise(group_by(t, scheme_management, label), 
+c_scheme_m_status <- arrange(summarise(group_by(tanz, scheme_management, label), 
                      TotalWells = length(unique(id)) ) )
-c_scheme_m_status
+# c_scheme_m_status
 
 # fill in NA's so data can be plotted
 c_scheme_m$scheme_management[is.na(c_scheme_m$scheme_management)] <- "unknown"
@@ -1133,16 +1616,44 @@ text(mp, non_func$perc, labels =
         pos = 3, cex = .75)
 ```
 
-Plots for the __scheme_management__ variable show that (excluding "None" since it applies to only a single well) that while the __Water Board__ scheme seems to yield the largest percentage of functional wells, that scheme is used for a relatively small number (2,748) of the 59,400 wells. By contrast, the __VWC__ scheme is used for nearly 36,800 wells. So while a majority of the schemes exceed the 54.3% overall functional metric, the vast majority of the wells themselves do not benefit from those schemes. 
+
+### Scheme_name
+
+The __scheme_name__ variable represents the name of the party responsible for managing a given well.  The summary statistics shown below indicate a total of 2,697 distinct scheme name values within the data set, with 28,166 records having no valid value. The 20 scheme names having the largest number of well installations are summarized in the table below.
+
+```{r}
+# count distinct scheme_name = 2697, 28,166 NA's
+length(unique(tanz$scheme_name))
+
+# calc number of wells per scheme_name
+c_scheme_n <- arrange(summarise(group_by(tanz, scheme_name), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_scheme_n, n = 20)
+```
+
+The large percentage of records lacking a defined scheme name combined with the lack of a definitive list of valid scheme names makes it unlikely that imputation of the missing values will prove feasible. As such, the __scheme_name__ variable appears unlikely to be useful for predictive modeling purposes.
 
 ### Permit
 
-```{r, echo = FALSE}
+The __permit__ variable is a binary True/False indicator. Summary statistics indicate that 28,166 records within the data set have no valid __permit__ value.
 
+```{r}
+# count distinct permit = 3, 28,166 NA's
+length(unique(tanz$permit))
+
+# calc number of wells per scheme_name
+c_permit <- arrange(summarise(group_by(tanz, permit), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_permit, n = 10)
+```
+
+The plots below show that wells indicated as having a permit are more likely to be functional than are those that did not require a permit.
+
+```{r, echo = FALSE}
 # permit
-c_permit_status <- arrange(summarise(group_by(t, permit, label), 
+c_permit_status <- arrange(summarise(group_by(tanz, permit, label), 
                      TotalWells = length(unique(id)) ) )
-c_permit_status
+# c_permit_status
 
 # fill in NA's so data can be plotted
 c_permit$permit[is.na(c_permit$permit)] <- "unknown"
@@ -1214,15 +1725,27 @@ text(mp, non_func$perc, labels =
         pos = 3, cex = .75)
 ```
 
-The __permit__ variable is a binary True/False indicator. The plots above show that wells that required a permit are more likely to be functional than are those that did not require a permit.
 
 ### Extraction Type
 
+The __extraction_type__ variable represents the method of extraction used by a given well. The summary statistics shown below indicate a total of 18 distinct __extraction_type__ values within the data set, with each record having a valid value. The number of well installations per extraction type is summarized in the table below.
+
+```{r}
+# count distinct extraction_type = 18
+length(unique(tanz$extraction_type))
+
+# calc number of wells per extraction_type
+c_extract_t <- arrange(summarise(group_by(tanz, extraction_type), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_extract_t, n = 10)
+```
+
+Plots of the __extraction_type__ variable show that seven of the seventeen extraction types have functional metrics that exceed the overall 54.3% benchmark. Of particular interest here is the __gravity__ type since nearly 27,000 of the 59,400 total wells rely on that approach, a far higher percentage than any of the other extraction types. 
+
 ```{r, echo = FALSE}
-# extraction_type
-c_extract_t_status <- arrange(summarise(group_by(t, extraction_type, label), 
+c_extract_t_status <- arrange(summarise(group_by(tanz, extraction_type, label), 
                      TotalWells = length(unique(id)) ), sort(extraction_type) )
-c_extract_t_status
+# c_extract_t_status
 
 # init percentage column
 c_extract_t_status$perc <- 0
@@ -1290,15 +1813,28 @@ text(mp, non_func$perc, labels =
         pos = 3, cex = .75)
 ```
 
-Plots of the __extraction_type__ variable show that seven of the seventeen extraction types have functional metrics that exceed the overall 54.3% benchmark. Of particular interest here is the __gravity__ type since nearly 27,000 of the 59,400 total wells rely on that approach, a far higher percentage than any of the other extraction types. 
 
 ### Extraction Type Group
 
+The __extraction_type_group__ variable represents a composite of the methods of extraction indicated by the __extraction_type__ variable. The summary statistics shown below indicate a total of 13 distinct __extraction_type_group__ values within the data set, with each record having a valid value. The number of well installations per extraction type group is summarized in the table below.
+
+```{r}
+# count distinct extraction_type_group = 13
+length(unique(tanz$extraction_type_group))
+
+# calc number of wells per extraction_type
+c_extract_tg <- arrange(summarise(group_by(tanz, extraction_type_group), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_extract_tg, n = 10)
+```
+
+The __extraction_type_group__ indicator appears to represent a narrowing of the breadth of values available via the __extraction_type__ variable into various higher-level overall categories. The __gravity__ type group again accounts for the largest percentage of total wells. 
+
 ```{r, echo = FALSE}
 # extraction_type
-c_extract_tg_status <- arrange(summarise(group_by(t, extraction_type_group, label), 
+c_extract_tg_status <- arrange(summarise(group_by(tanz, extraction_type_group, label), 
                      TotalWells = length(unique(id)) ) )
-c_extract_tg_status
+# c_extract_tg_status
 
 # init percentage column
 c_extract_tg_status$perc <- 0
@@ -1366,15 +1902,28 @@ text(mp, non_func$perc, labels =
         pos = 3, cex = .75)
 ```
 
-The __extraction_type_group__ indicator appears to represent a narrowing of the breadth of values available via the __extraction_type__ variable into various higher-level overall categories. The __gravity__ type group again accounts for the largest percentage of total wells. 
 
 ### Extraction Type Class
 
+The __extraction_type_class__ variable represents a composite of the methods of extraction indicated by the __extraction_type_group__ variable. The summary statistics shown below indicate a total of 7 distinct __extraction_type_class__ values within the data set, with each record having a valid value. The number of well installations per extraction type class is summarized in the table below.
+
+```{r}
+# count distinct extraction_type_class = 7
+length(unique(tanz$extraction_type_class))
+
+# calc number of wells per extraction_type_class
+c_extract_t_c <- arrange(summarise(group_by(tanz, extraction_type_class), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_extract_t_c, n = 10)
+```
+
+The __extraction_type_class__ indicator appears to represent a narrowing of the breadth of values available via the __extraction_type_group__ variable into various higher-level overall categories. The __gravity__ type class again accounts for the largest percentage of total wells. However, the __handpump__ class also represents a significant percentage of the total well count, with nearly 16,400 wells having been assigned to that class. Of the seven classes, three exceed the 54.3% overall functional benchmark.
+
 ```{r, echo = FALSE}
 # extraction_type
-c_extract_tc_status <- arrange(summarise(group_by(t, extraction_type_class, label), 
+c_extract_tc_status <- arrange(summarise(group_by(tanz, extraction_type_class, label), 
                      TotalWells = length(unique(id)) ) )
-c_extract_tc_status
+# c_extract_tc_status
 
 # init percentage column
 c_extract_tc_status$perc <- 0
@@ -1442,16 +1991,28 @@ text(mp, non_func$perc, labels =
         pos = 3, cex = .75)
 ```
 
-The __extraction_type_class__ indicator appears to represent a narrowing of the breadth of values available via the __extraction_type_group__ variable into various higher-level overall categories. The __gravity__ type class again accounts for the largest percentage of total wells. However, the __handpump__ class also represents a significant percentage of the total well count, with nearly 16,400 wells having been assigned to that class. Of tje seven classes, three exceed the 54.3% overall functional benchmark.
-
 
 ### Management
 
+The __management__ variable represents the name of the method employed for management of a given well. The summary statistics shown below indicate a total of 12 distinct __management__ values within the data set, with each record having a valid value. The number of well installations per management method is summarized in the table below.
+
+```{r}
+# count distinct management = 12
+length(unique(tanz$management))
+
+# calc number of wells per management
+c_mgmt <- arrange(summarise(group_by(tanz, management), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_mgmt, n = 20)
+```
+
+__VWC__ dominates the __management__ variable's values, with more than 40,000 wells having been assigned that value. As we can see in the plots below, while seven other management approaches have higher percentages of their wells functional, collectively those seven approaches are applied to less than one third of the wells. 
+
 ```{r, echo = FALSE}
 # management
-c_mgmt_status <- arrange(summarise(group_by(t, management, label), 
+c_mgmt_status <- arrange(summarise(group_by(tanz, management, label), 
                      TotalWells = length(unique(id)) ), sort(management) )
-c_mgmt_status
+# c_mgmt_status
 
 # init percentage column
 c_mgmt_status$perc <- 0
@@ -1519,15 +2080,28 @@ text(mp, non_func$perc, labels =
         pos = 3, cex = .75)
 ```
 
-__VWC__ dominates the __management__ variable's values, with more than 40,000 wells having been assigned that value. As we can see in the plots above, while seven other management approaches have higher percentages of their wells functional, collectively those seven approaches are applied to less than one third of the wells. 
 
 ### Management Group
 
+The __management_group__ variable may represent a composite of the management method names indicated by the __management__ variable. The summary statistics shown below indicate a total of 5 distinct __management_group__ values within the data set, including 561 records labeled as "unknown". The number of well installations per management group is summarized in the table below.
+
+```{r}
+# count distinct management_group = 5
+length(unique(tanz$management_group))
+
+# calc number of wells per management_group
+c_mgmt_grp <- arrange(summarise(group_by(tanz, management_group), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_mgmt_grp, n = 10)
+```
+
+The __management_group__ variable's most relevant value is __user-group__, with 52,490 wells having been assigned that value. As we can see in the plots, __user-group__ yields a functional well percentage close to that of the 54.3% overall functional metric.
+
 ```{r, echo = FALSE}
 # management group
-c_mgmt_grp_status <- arrange(summarise(group_by(t, management_group, label), 
+c_mgmt_grp_status <- arrange(summarise(group_by(tanz, management_group, label), 
                      TotalWells = length(unique(id)) ), sort(management_group) )
-c_mgmt_grp_status
+# c_mgmt_grp_status
 
 # init percentage column
 c_mgmt_grp_status$perc <- 0
@@ -1595,16 +2169,28 @@ text(mp, non_func$perc, labels =
         pos = 3, cex = .75)
 ```
 
-The __management_group__ variable's most relevant value is __user-group__, with 52,490 wells having been assigned that value. As we can see in the plots, __user-group__ yields a functional well percentage close to that of the 54.3% overall functional metric.
-
 
 ### Payment
 
+The __payment__ variable represents how the water is actually paid for by users of the pump, if at all. The summary statistics shown below indicate a total of 12 distinct __payment__ values within the data set, with each record having a valid value. The number of well installations per payment method is summarized in the table below.
+
+```{r}
+# count distinct payment = 7
+length(unique(tanz$payment))
+
+# calc number of wells per payment
+c_paymt <- arrange(summarise(group_by(tanz, payment), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_paymt, n = 10)
+```
+
+As shown above, more than 25,000 wells require no payment for their use, and, unsurprisingly, as shown in the graphics below, those wells appear to be the least functional overall if __unknown__ payment types are excluded. However, wells that do not require payment may be located in remote areas where collection of payment is not feasible. Nevertheless, it appears reasonable to conclude that requiring users to pay for use of a well is more likely to result in a well remaining functional than will allowing use of a well free of charge.
+
 ```{r, echo = FALSE}
 # payment
-c_paymt_status <- arrange(summarise(group_by(t, payment, label), 
+c_paymt_status <- arrange(summarise(group_by(tanz, payment, label), 
                      TotalWells = length(unique(id)) ), sort(payment) )
-c_paymt_status
+# c_paymt_status
 
 # init percentage column
 c_paymt_status$perc <- 0
@@ -1672,16 +2258,28 @@ text(mp, non_func$perc, labels =
         pos = 3, cex = .75)
 ```
 
-__Payment__ represents how the water is actually paid for by users of the pump, if at all. More than 25,000 wells require no payment for their use, and, unsurprisingly, those wells appear to be the least functional overall if __unknown__ payment types are excluded. However, wells that do not require payment may be located in remote areas where collection of payment is not feasible. Nevertheless, it appears reasonable to conclude that requiring users to pay for use of a well is more likely to result in a well remaining functional than will allowing use of a well free of charge.
-
 
 ### Payment Type
 
+The __payment_type__ variable represents a duplicate of the payment methods indicated by the __payment__ variable, with the sole difference being that __payment__'s *"pay when scheme fails"* category has been replaced by *"on failure"*. The summary statistics shown below indicate a total of 7 distinct __payment_type__ values within the data set, with each record having a valid value. The number of well installations per payment type is summarized in the table below.
+
+```{r}
+# count distinct payment_type = 7; on failure appears to replace "pay when scheme fails" from payment variable
+length(unique(tanz$payment_type))
+
+# calc number of wells per payment_type
+c_paymt_t <- arrange(summarise(group_by(tanz, payment_type), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_paymt_t, n = 10)
+```
+
+The __payment_type__ variable's values are not distinct from those of the __payment__ variable. In fact, the names of the values are simply minor alterations of those provided via the __payment__ variable. All of the plots shown below exhibit values identical to those of the __payment__ variable once the minor value name alterations are considered. As such, the __payment_type__ variable appears to be redundant and can therefore be ignored for purposes of model building.
+
 ```{r, echo = FALSE}
 # payment_type
-c_paymt_t_status <- arrange(summarise(group_by(t, payment_type, label), 
+c_paymt_t_status <- arrange(summarise(group_by(tanz, payment_type, label), 
                      TotalWells = length(unique(id)) ), sort(payment_type) )
-c_paymt_t_status
+# c_paymt_t_status
 
 # init percentage column
 c_paymt_t_status$perc <- 0
@@ -1749,16 +2347,28 @@ text(mp, non_func$perc, labels =
         pos = 3, cex = .75)
 ```
 
-The __payment_type__ variable's values are not distinct from those of the __payment__ variable. In fact, the names of the values are simply minor alterations of those provided via the __payment__ variable. All of the plots shown above exhibit values identical to those of the __payment__ variable once the minor value name alterations are considered. As such, the __payment_type__ variable appears to be redundant and can therefore be ignored for purposes of model building.
-
 
 ### Water Quality
 
+The __water_quality__ variable is an indicator of the quality of the water produced by a given well. The summary statistics shown below indicate a total of 8 distinct __water_quality__ values within the data set, with each record having a valid value. The number of well installations per __water_quality__ value is summarized in the table below.
+
+```{r}
+# count distinct water_quality = 8
+length(unique(tanz$water_quality))
+
+# calc number of wells per water_quality
+c_waterq <- arrange(summarise(group_by(tanz, water_quality), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_waterq, n = 10)
+```
+
+The __water_quality__ variable is dominated by the __soft__ value, with 50,818 of the 59,400 wells having that __water_quality__ value. While the plots shown below indicate that the largest percentage of functional wells belong to those of the __fluoride__ category, there are only 200 such wells throughout the country.
+
 ```{r, echo = FALSE}
 # water_quality
-c_waterq_status <- arrange(summarise(group_by(t, water_quality, label), 
+c_waterq_status <- arrange(summarise(group_by(tanz, water_quality, label), 
                      TotalWells = length(unique(id)) ), sort(water_quality) )
-c_waterq_status
+# c_waterq_status
 
 # init percentage column
 c_waterq_status$perc <- 0
@@ -1826,16 +2436,28 @@ text(mp, non_func$perc, labels =
         pos = 3, cex = .75)
 ```
 
-The __water_quality__ variable is dominated by the __soft__ value, with 50,818 of the 59,400 wells having that __water_quality__ value. While the plots shown above indicate that the largest percentage of functional wells belong to those of the __fluoride__ category, there are only 200 such wells throughout the country.
-
 
 ### Quality Group
 
+The __quality_group__ variable represents a composite of the water quality indicators provided by the __water_quality__ variable. The summary statistics shown below indicate a total of 6 distinct __quality_group__ values within the data set, with each record having a valid value. The number of well installations per extraction type class is summarized in the table below.
+
+```{r}
+# count distinct quality_group = 6
+length(unique(tanz$quality_group))
+
+# calc number of wells per quality_group
+c_qualityg <- arrange(summarise(group_by(tanz, quality_group), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_qualityg, n = 10)
+```
+
+The __quality_group__ variable appears to represent a narrowing of the breadth of values available via the __water_quality__ variable. In fact, the number of wells in the __good__ category is identical to those of the __water_quality__ variable's __soft__ category, while the __fluoride__ and __salty__ categories have been created by summing the __fluoride__, __fluoride_abandoned__, and __salty__ and __salty_abandoned__ categories belonging to the __water_quality__ variable. As such, this variable may be duplicative/redundant and therefore may likely be considered for removal for purposes of model building.
+
 ```{r, echo = FALSE}
 # quality_group
-c_qualityg_status <- arrange(summarise(group_by(t, quality_group, label), 
+c_qualityg_status <- arrange(summarise(group_by(tanz, quality_group, label), 
                      TotalWells = length(unique(id)) ), sort(quality_group) )
-c_qualityg_status
+# c_qualityg_status
 
 # init percentage column
 c_qualityg_status$perc <- 0
@@ -1903,15 +2525,39 @@ text(mp, non_func$perc, labels =
         pos = 3, cex = .75)
 ```
 
-The __quality_group__ variable appears to represent a narrowing of the breadth of values available via the __water_quality__ variable. In fact, the number of wells in the __good__ category is identical to those of the __water_quality__ variable's __soft__ category, while the __fluoride__ and __salty__ categories have been created by summing the __fluoride__, __fluoride_abandoned__, and __salty__ and __salty_abandoned__ categories belonging to the __water_quality__ variable. As such, this variable may be duplicative/redundant and therefore can likely be ignored for purposes of model building.
 
 ### Quantity & Quantity_Group
 
+The __quantity__ and __quantity_group__ variables are exact duplicates of one another, as shown in the summary statistics provided below. Both variables are used to indicate the quantity of water available at a given well. The summary statistics indicate a total of 5 distinct __quantity__ and __quantity_group__ values within the data set, with each record having a valid value. The number of well installations per __quantity__ value is summarized in the table below.
+
+```{r}
+# count distinct quantity = 5
+length(unique(tanz$quantity))
+
+# calc number of wells per quantity
+c_quantity <- arrange(summarise(group_by(tanz, quantity), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_quantity, n = 10)
+
+# -------------------------------
+# count distinct quantity_group = 5; appears to be identical to "quantity" variable
+length(unique(tanz$quantity_group))
+
+# calc number of wells per quantity_group
+c_quantityg <- arrange(summarise(group_by(tanz, quantity_group), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_quantityg, n = 10)
+```
+
+The __quantity__ and __quantity_group__ variables have identical categories with identical numbers of wells assigned to each. As such, the __quantity_group__ variable is likely to be redundant/duplicative and can therefore be ignored for purposes of model building. 
+
+Of the five __quantity__ categories, the __dry__ category offers the smallest percentage of functional wells with only 2.5% of such wells being labeled as such. By contrast, more than 65% of wells categorized as having a __quantity__ of __enough__ are functional.
+
 ```{r, echo = FALSE}
 # quantity
-c_quantity_status <- arrange(summarise(group_by(t, quantity, label), 
+c_quantity_status <- arrange(summarise(group_by(tanz, quantity, label), 
                      TotalWells = length(unique(id)) ), sort(quantity) )
-c_quantity_status
+# c_quantity_status
 
 # init percentage column
 c_quantity_status$perc <- 0
@@ -1979,18 +2625,28 @@ text(mp, non_func$perc, labels =
         pos = 3, cex = .75)
 ```
 
-The __quantity__ and __quantity_group__ variables have identical categories with identical numbers of wells assigned to each. As such, the __quantity_group__ variable is likely to be redundant/duplicative and can therefore be ignored for purposes of model building. 
-
-Of the five categories, the __dry__ category offers the smallest percentage of functional wells with only 2.5% indicated as such. By contrast, more than 65% of wells categorized as having a __quantity__ of __enough__ are functional.
-
 
 ### Source
 
+The __source__ variable indicates the source of the water for a given well. The summary statistics shown below indicate a total of 10 distinct __source__ values within the data set, with each record having a valid value. The number of well installations per __source__ value is summarized in the table below.
+
+```{r}
+# count distinct source = 10
+length(unique(tanz$source))
+
+# calc number of wells per source
+c_source <- arrange(summarise(group_by(tanz, source), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_source, n = 10)
+```
+
+As shown below, the __spring__ category of the __source__ variable offers the highest percentage of functional wells and also represents the largest __source__ category with 17,021 wells. By contrast, while the __lake__ category performs poorly, it represents only 765 of the 59,400 pumps represented in the data set. Of the other categories represented, 57.8% of __source__ = __dam__ are also not functioning.
+
 ```{r, echo = FALSE}
 # source
-c_source_status <- arrange(summarise(group_by(t, source, label), 
+c_source_status <- arrange(summarise(group_by(tanz, source, label), 
                      TotalWells = length(unique(id)) ), sort(source) )
-c_source_status
+# c_source_status
 
 # init percentage column
 c_source_status$perc <- 0
@@ -2058,17 +2714,30 @@ text(mp, non_func$perc, labels =
         pos = 3, cex = .75)
 ```
 
-The __spring__ category of the __source__ variable offers the highest percentage of functional wells and also represents the largest __source__ category with 17,021 wells. By contrast, while the __lake__ category performs poorly, it represents only 765 of the 59,400 pumps represented in the data set.
-
-Of the other categories represented, 57.8% of __source__ = __dam__ are also not functioning.
 
 ### Source Type
 
+The __source_type__ variable appears to be a composite of the __source__ variable. The summary statistics shown below indicate a total of 7 distinct __source_type__ values within the data set, with each record having a valid value. The number of well installations per __source_type__ is summarized in the table below.
+
+```{r}
+# count distinct source_type = 7
+length(unique(tanz$source_type))
+
+# calc number of wells per source_type
+c_source_t <- arrange(summarise(group_by(tanz, source_type), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_source_t, n = 10)
+```
+
+The __source_type__ variable appears to combine some of the categories from __source__ variable. As such, this variable may be redundant / duplicative and might possibly be ignored for purposes of model building. 
+
+As shown below, the __spring__ category of the __source_type__ variable offers the highest percentage of functional wells and also represents the largest __source_type__ category with 17,021 wells. By contrast, while the __dam__ category performs poorly, it represents only 656 of the 59,400 pumps represented in the data set. Of the other categories represented, 46.2% of __source_type__ = __borehole__ are also not functioning.
+
 ```{r, echo = FALSE}
 # source_type
-c_source_t_status <- arrange(summarise(group_by(t, source_type, label), 
+c_source_t_status <- arrange(summarise(group_by(tanz, source_type, label), 
                      TotalWells = length(unique(id)) ), sort(source_type) )
-c_source_t_status
+# c_source_t_status
 
 # init percentage column
 c_source_t_status$perc <- 0
@@ -2136,15 +2805,28 @@ text(mp, non_func$perc, labels =
         pos = 3, cex = .75)
 ```
 
-The __source_type__ variable appears to be a composite of the __source__ variable with some of the categories from __source__ having been summed together to create new but similar category names. As such, this variable may be redundant / duplicative and might possibly be ignored for purposes of model building.
 
 ### Source_Class
 
+The __source_class__ variable appears to be a composite of the __source_type__ variable. The summary statistics shown below indicate a total of 3 distinct __source_class__ values within the data set, with each record having a valid value. The number of well installations per __source_class__ is summarized in the table below.
+
+```{r}
+# count distinct source_class = 3
+length(unique(tanz$source_class))
+
+# calc number of wells per source_class
+c_source_c <- arrange(summarise(group_by(tanz, source_class), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_source_c, n = 10)
+```
+
+The __source_class__ variable appears to be a binary indicator, with, as shown below, both known categories appearing to be equally likely to offer a functional well. However, __groundwater__ class wells appear to be more likely than __surface__ class wells to be completely non-functional.
+
 ```{r, echo = FALSE}
 # source_class
-c_source_c_status <- arrange(summarise(group_by(t, source_class, label), 
+c_source_c_status <- arrange(summarise(group_by(tanz, source_class, label), 
                      TotalWells = length(unique(id)) ), sort(source_class) )
-c_source_c_status
+# c_source_c_status
 
 # init percentage column
 c_source_c_status$perc <- 0
@@ -2212,16 +2894,28 @@ text(mp, non_func$perc, labels =
         pos = 3, cex = .75)
 ```
 
-The __source_class__ variable appears to be a binary indicator, with both known categories appearing to be equally likely to offer a functional well, though __groundwater__ wells appear to be more likely to be completely non-functional.
-
 
 ### Waterpoint Type
 
+The __waterpoint_type__ variable indicates the type of well installed at a given location. The summary statistics shown below indicate a total of 7 distinct __waterpoint_type__ values within the data set, with each record having a valid value. The number of well installations per __waterpoint_type__ value is summarized in the table below.
+
+```{r}
+# count distinct waterpoint_type = 7
+length(unique(tanz$waterpoint_type))
+
+# calc number of wells per waterpoint_type
+c_waterp_t <- arrange(summarise(group_by(tanz, waterpoint_type), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_waterp_t, n = 10)
+```
+
+As shown below, the __waterpoint_type__ variable's values indicate that pumps having a __dam__ as their waterpoint are the most likely to be functional while __communal standpipe multiple__ appear to be the least likely to be functional. However, there are only 7 pumps having a __waterpoint_type__ of __dam__. In fact, the most common __waterpoint_type__ is __communal standpipe__ followed by __hand pump__. Both of those categories appear to perform well relative to the overall functional benchmark of 54.3%. 
+
 ```{r, echo = FALSE}
 # waterpoint_type
-c_waterp_t_status <- arrange(summarise(group_by(t, waterpoint_type, label), 
+c_waterp_t_status <- arrange(summarise(group_by(tanz, waterpoint_type, label), 
                      TotalWells = length(unique(id)) ), sort(waterpoint_type) )
-c_waterp_t_status
+# c_waterp_t_status
 
 # init percentage column
 c_waterp_t_status$perc <- 0
@@ -2289,18 +2983,28 @@ text(mp, non_func$perc, labels =
         pos = 3, cex = .75)
 ```
 
-The __waterpoint_type__ variable's values indicate that pumps having a __dam__ as their waterpoint are the most likely to be functional while __communal standpipe multiple__ appear to be the least likely to be functional. However, there are only 7 pumps having a __waterpoint_type__ of __dam__. In fact, the most common __waterpoint_type__ is __communal standpipe__ followed by __hand pump__. Both of those categories appear to perform well relative to the overall functional benchmark of 54.3%. 
-
 
 ### Waterpoint Type Group
 
-```{r, echo = FALSE}
-# -----------------------------------------------------------
-# waterpoint_type_group
-c_waterp_t_g_status <- arrange(summarise(group_by(t, waterpoint_type_group, label), 
-                     TotalWells = length(unique(id)) ), sort(waterpoint_type_group) )
-c_waterp_t_g_status
+The __waterpoint_type_group__ variable appears to be a composite of the __waterpoint_type__ variable. The summary statistics shown below indicate a total of 6 distinct __waterpoint_type_group__ values within the data set, with each record having a valid value. The number of well installations per __waterpoint_type_group__ is summarized in the table below.
 
+```{r}
+# count distinct waterpoint_type_group = 6
+length(unique(tanz$waterpoint_type_group))
+
+# calc number of wells per waterpoint_type_group
+c_waterp_t_g <- arrange(summarise(group_by(tanz, waterpoint_type_group), 
+                     TotalWells = length(unique(id)) ), desc(TotalWells) )
+head(c_waterp_t_g, n = 10)
+```
+
+As shown above, the __waterpoint_type_group__ appears to be a composite of the __waterpoint_type__ variable, with the sole difference being the two standpipe groups have been summed together. As such, this variable is likely duplicative / redundant and might possibly be ignored for purposes of model building. Plots showing the status of wells by __waterpoint_type_group__ value are shown below.
+
+```{r, echo = FALSE}
+# waterpoint_type_group
+c_waterp_t_g_status <- arrange(summarise(group_by(tanz, waterpoint_type_group, label), 
+                     TotalWells = length(unique(id)) ), sort(waterpoint_type_group) )
+# c_waterp_t_g_status
 
 # init percentage column
 c_waterp_t_g_status$perc <- 0
@@ -2368,21 +3072,157 @@ text(mp, non_func$perc, labels =
         pos = 3, cex = .75)
 ```
 
-The __waterpoint_type_group__ appears to be a composite of the __waterpoint_type__ variable, with the sole difference being the two standpipe groups have been summed together. As such, this variable is likely duplicative / redundant and might possibly be ignored for purposes of model building.
+
+# Data Preparation
+
+A brief description of how missing data values will be imputed where feasible
+
+## Numeric Variables
+
+### amount_tsh
+
+Imputation based on mean of sum of median __amount_tsh__ values found for corresponding __extraction_type_class__ and __waterpoint_type_group__ values.
 
 
+### gps_height
 
-# Convert categoricals with strings to factors (where feasible)
+Approach: A linear model using latitude + longitude as independent variables and gps_height as the dependent variable.
 
-This would be done after data prep
+The __gps_height__ variable is comprised of more than 20,000 zero values. While some of these zero values may be legitimate, it seems highly unlikely that such a large proportion of the wells represented within the data set could conceivably be located exactly at sea level. Such a large number of questionable variable values suggests that the variable might be excluded in its entirety from any predictive models. However, it is likely that the altitude of a well may offer some predictive value to a model since altitude may play a role in whether a well is functioning or not. For example, the higher the altitude of a well, the larger the distance might be between the wellhead and the underlying water table. As such, we will attempt to impute the altitude of a well by using latitude and longitude coordinates for wells whose __gps_height__ is known.
+
+A histogram for non-zero __gps_height__ values shows a bimodal distribution, with relatively normal distributions occurring around altitudes of 350 and 1400, respectively:
 
 ```{r}
-# tanz$basin <- factor(tanz$basin)
-# etc..
-
+hist(tanz$gps_height[tanz$gps_height != 0], col = "yellow")
 ```
 
-Now generate summary data for data set
+While imputations via linear modeling for the zero values might lead to changes in the distribution shown above, use of an alternative imputation method such as assigning the mean or median __gps_height__ value to the zero values would likely result in a far less realistic of values for the variable.
+
+Both the __latitude__ and __longitude__ variables contain a relatively small number of missing data values (1819 and 1812, respectively), and those missing values coincide with 1812 of the zero values found in the __gps_height__ variable:
+
 ```{r}
-# summary(tanz)
+nrow(subset(tanz, latitude > -1  & longitude == 0 & gps_height == 0) )
 ```
+
+Exclusion of such data records from our imputation work will ensure that the remaining nearly 19,000 zero values within the __gps_height__ variable will be updated with an imputed altitude value that reflect the longitude and latitude coordinates of the corresponding well.
+
+```{r, eval = FALSE}
+# NOTE: THIS CODE CHUNK IS DISABLED FOR NOW
+
+# create a subset of non-zero gps_height records
+gh <- subset(tanz, tanz$gps_height != 0)
+nrow(gh) # 38,962 non-zero rows
+
+# check to ensure lack of zero vals for lat + long vars
+nrow(subset(gh, latitude > -1  & longitude == 0 ))
+
+# create a subset of gps_height == 0
+ghz <- subset(tanz, tanz$gps_height == 0)
+nrow(ghz) # 20,438 non-zero rows
+
+# fit a linear model for gps_height using latitude, longitude
+lm_gh <- lm(data = gh, gps_height ~ longitude + latitude)
+summary(lm_gh)
+
+# check model performance
+fit1 <- lm_gh$fitted.values
+summary(lm_gh$fitted.values)
+hist(lm_gh$fitted.values, col = 'yellow')
+
+gpsh <- gh$gps_height
+summary(gpsh)
+
+# compare histograms
+hist(lm_gh$fitted.values, col = 'yellow')
+hist(gpsh, col = 'yellow')
+par(mfrow = c(1,1))
+plot(fit1, gpsh, xlab="Fitted Values")
+abline(lsfit(fit1, gpsh),lty=2)
+
+# now predict TARGET_AMT using model
+pred.ghz <- round(predict(lm_gh, newdata= ghz, type="response"))
+
+ghz$gps_height <- pred.ghz
+
+# add new variable to house imputed values
+tanz$gps_height_new <- tanz$gps_height
+
+# put imputed vals into orig data
+tanz$gps_height_new[tanz$gps_height_new == 0] <- pred.ghz
+
+# memory cleanup
+rm(gh, ghz, lm_gh, gpsh, pred.ghz, fit1)
+```
+
+### Population
+
+Impute using the median non-zero value
+
+```{r}
+# median = 150
+summary(tanz$population[tanz$population > 0])
+
+# create new variable to house imputed population values
+tanz$population_new <- tanz$population
+
+tanz$population_new[tanz$population_new == 0] <- median(tanz$population[tanz$population > 0])
+
+hist(tanz$population_new, col = 'yellow')
+```
+
+
+### Latitude and Longitude
+
+Full writeup to follow. Summary of imputation approach is:
+
+- Use mean of geographic indicator variables
+
+- Start at __ward__ level, find mean of lat + long for a ward
+
+- If mean == 0 for ward, move up to lga, then region
+
+- imputed values are loaded into a new variable called __longitude_new__ and __latitude_new__
+
+## Categorical Variables
+
+### Funder
+
+Due to high coincidence w/ __installer__ NA's, fill __funder__ NA's with "unknown".
+
+### Installer
+
+Due to high coincidence w/ __funder__ NA's, fill __installer__ NA's with "unknown".
+
+### Subvillage
+
+371 NA's. Probably best to fill with "unknown"
+
+### Public Meeting
+
+Public meeting is a binary variable with 3,334 NA's so we have 2 options for filling missing values:
+
+1. Simply fill NA's with "unknown"
+
+2. Fit a binary logistic regression model using a subset of data variables (including the status_group) with __public_meeting__ as the response variable and use predictions to fill missing values
+
+
+### Scheme Management
+
+3877 NA's. Can be filled either with "unknown" or via multinomial logistic regression model. No other obvious method of imputing based on variables at hand.
+
+
+### scheme_name
+
+28166 NA's. Too many to impute due to 2700 possible scheme names. Variable is unlikely to have much predictive value anyway due to high number of possible categorical values.
+
+### Permit
+
+Permit is a binary variable with 3056 NA's so we have 2 options for filling missing values:
+
+1. Simply fill NA's with "unknown"
+
+2. Fit a binary logistic regression model using a subset of data variables (including the status_group) with __permit__ as the response variable and use predictions to fill missing values
+
+### construction_year
+
+20,709 NA's. No way to impute based on geographic variables due to many regions, districts, lga's, wards, and subvillages have no non-zero construction year values. May be forced to impute using a median of the non-zero values though such an approach may prove problematic to due large percentage of data values that require imputation. Alternative is to use a linear model. 

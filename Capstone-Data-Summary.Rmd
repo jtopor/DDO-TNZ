@@ -41,6 +41,7 @@ However, many of the categorical variables are comprised of character strings th
 | population        | 21,381 of 59.400 records = "0"      |
 | longitude         | 1,812 zero values: likely invalid   |
 | latitude          | 1,819 values < -1: likely invalid   |
+| num_private       | 58,643 of 59.400 records = "0"      |
 
 
 ### Categorical variables
@@ -52,7 +53,6 @@ Please note that the NA totals listed below were calculated *after* converting b
 | funder               | 1898            | 3635 |                               |
 | installer            | 2146            | 3655 |                               |
 | wpt_name             | 37400           | 0    |                               |
-| num_private          | 65              | 0    |                               |
 | basin                | 9               | 0    |                               |
 | subvillage           | 19288           | 371  |                               |
 | region               | 21              | 0    |                               |
@@ -60,10 +60,10 @@ Please note that the NA totals listed below were calculated *after* converting b
 | district_code        | 20              | 0    |                               |
 | lga                  | 125             | 0    |                               |
 | ward                 | 2092            | 0    |                               |
-| public_meeting       | 3               | 3334 | binary                        |
+| public_meeting       | 3               | 3334 | binary + NA's                 |
 | scheme_management    | 13              | 3877 |                               |
 | scheme_name          | 2697            | 28166|                               |
-| permit               | 3               | 3056 | binary                        |
+| permit               | 3               | 3056 | binary + NA's                 |
 | construction_year    | 55              | 20709|                               |
 | extraction_type      | 18              | 0    |                               |
 | extraction_type_group| 13              | 0    | composite of extr_type        |
@@ -77,8 +77,8 @@ Please note that the NA totals listed below were calculated *after* converting b
 | quantity             | 5               | 0    |                               |
 | quantity_group       | 5               | 0    | dupe of quantity              |
 | source               | 10              | 0    |                               |
-| source_type          | 10              | 0    | dupe of source                |
-| source_class         | 3               | 0    | binary                        |
+| source_type          | 7               | 0    | composite of source           |
+| source_class         | 3               | 0    | binary + "unknow              |
 | waterpoint_type      | 7               | 0    |                               |
 | waterpoint_type_group| 6               | 0    | composite of waterpoint_type  |
 
@@ -90,3 +90,6 @@ Please note that the NA totals listed below were calculated *after* converting b
 | id                       | int       |
 | date_recorded            | date      |
 | recorded_by              | char str  |
+
+
+The administrative variables shown above have no predictive value and will be ignored for purposes of model building. The __id__ variable serves as a unique identifier for each data record within the data set. The __date_recorded__ variable indicates the date on which the each record presented within the data was collected, while the __recorded_by__ variable contains the name of the survey firm that collected the data.

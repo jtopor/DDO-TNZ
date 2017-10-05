@@ -214,7 +214,9 @@ The numeric and categorical variables listed above are explored in detail below.
 
 ### amount_tsh
 
-The __amount_tsh__ variable can be characterized as representing the *"Total static head (amount water available to waterpoint)"*. Summary statistics and a boxplot for the __amount_tsh__ variable indicate a heavily right-skewed distribution:
+The __amount_tsh__ variable can be characterized as representing the *"Total static head (amount water available to waterpoint)"*. According to the __Encyclopedia of Marine Technology__, the definition of "total static head" is "the vertical height of a stationary column of liquid produced by a pump" [ref needed]. In other words, it is the height at which a pump can raise water above its source. Therefore, a pump with a total static head value of zero would not be particularly useful since it would not be capable of producing water from a source located below its output point. 
+
+Summary statistics and a boxplot for the __amount_tsh__ variable indicate a heavily right-skewed distribution:
 
 ```{r}
 summary(tanz$amount_tsh)
@@ -228,7 +230,7 @@ In fact, analysis of the __amount_tsh__ variable indicates that 41,639 of the 59
 length(tanz$amount_tsh[tanz$amount_tsh == 0])
 ```
 
-Analysis of the __amount_tsh = 0__ values relative to various geographic variables provided within the data set reveals a significant amount of clustering of such values by subvillage, ward, lga, district_code, and region. The table below provides a summary of this clustering.
+Analysis of the __amount_tsh = 0__ values relative to various geographic variables provided within the data set reveals a significant amount of clustering of such values by __subvillage__, __ward__, __lga__, __district_code__, and __region__. The table below provides a summary of this clustering.
 
 ```{r, echo = FALSE, eval = FALSE}
 
@@ -334,9 +336,7 @@ rm(svill_no_alt, ward_no_alt, dc_no_alt, region_no_alt, basin_no_alt)
 
 As shown in the table, more than two-thirds of subvillages and one-half wards represented within the data set have no non-zero __amount_tsh__ values, as do 32% of lga's, 10% of district_codes and 19% of regions. Such clustering might suggest a systemic data collection issue within those geographic areas, e.g., perhaps the wells located within those areas were not actually visited by the surveying company that compiled the data. Alternatively, the total static head for many wells may simply not be known if it was not recorded when the pump was originally installed. 
 
-In any event, the lack of accurate data values across so many geographic indicators strongly suggests that imputing the missing data values via geographic indicators will not be possible. 
-
-Further analysis is required to determine whether the remaining zero values are in fact valid data values or if they merely represent the lack of an accurate total static head measurement for the associated wells. However, given the widespread lack of accurate measurements found for these geographic areas it seems highly likely that the zero values are simply invalid.
+In any event, the lack of non-zero data values across so many geographic indicators strongly suggests that imputing the zero values found within the __amount_tsh__ variable via geographic indicators will not be possible. Furthermore, given the widespread lack non-zero __amount_tsh__ values found for these geographic areas it seems highly likely that the zero values are simply invalid.
 
 Analysis shows that 14,771 of the non-zero values fall within the range of (1 : 1000):
 
@@ -348,17 +348,17 @@ hist(atsh, col = 'yellow', main = "Histogram of amount_tsh values (1:1000)")
 
 This leaves slightly less than 3,000 records having __amount_tsh__ values that exceed 1000. Such values should be investigated to determine whether they are in fact valid values for the variable.
 
-The __extration_type_class__ and __waterpoint_type_group__ categorical variables are each at least somewhat indicative of the type of well deployed at each waterpoint. Assuming similar types of wells generally share somewhat similar physical characteristics and limitations, there may be a relationship we can infer between these two variables and the __amount_tsh__ value each well may reasonably have. The tables below summarize the median non-zero __amount_tsh__ values for each category of the __extration_type_class__ and __waterpoint_type_group__ variables. 
+The __extraction_type_group__ and __waterpoint_type_group__ categorical variables are each at least somewhat indicative of the type of well deployed at each waterpoint. Assuming similar types of wells generally share somewhat similar physical characteristics and limitations, there may be a relationship we can infer between these two variables and the __amount_tsh__ value each well may reasonably have. The tables below summarize the median non-zero __amount_tsh__ values for each category of the __extraction_type_group__ and __waterpoint_type_group__ variables. 
 
 ```{r}
 # isolate non-zero amount_tsh records
 t_atsh <- subset(tanz, amount_tsh !=0)
 
 # get the median amount_tsh value for each extraction_type_class
-etc_mtsh <- arrange(summarise(group_by(t_atsh, extraction_type_class), 
+etg_mtsh <- arrange(summarise(group_by(t_atsh, extraction_type_group), 
                      MedTsh = median(amount_tsh) ), desc(MedTsh) )
 
-etc_mtsh
+etg_mtsh
 
 # check avg tsh for extraction_type_class
 # mean(tanz$amount_tsh[which(tanz$extraction_type_class == 'gravity')])
@@ -374,7 +374,7 @@ rm(t_atsh)
 
 ```
 
-Since each well represented within the data set has known values for both of these variables, the median values shown in the tables above may allow us to impute a reasonable value for each instance of __amount_tsh = 0__ within the data set.
+Since each well represented within the data set has known values for both of these variables, one or both of the median values shown in the tables above may allow us to impute a reasonable value for each instance of __amount_tsh = 0__ within the data set.
 
 
 ### gps_height
@@ -3113,7 +3113,11 @@ A brief description of how missing data values will be imputed where feasible
 
 ### Data Prep: amount_tsh
 
-Imputation based on median non-zero __amount_tsh__ value for corresponding __extraction_type_group__ value (NOTE: not all __extraction_type__ values have a non-zero __amount_tsh__ value, hence the need to use __extraction_type_group__).
+__Approach__: Imputation of zero values based on median non-zero __amount_tsh__ value for the corresponding __extraction_type_group__ value (NOTE: not all __extraction_type__ values have a non-zero __amount_tsh__ value, hence the need to use __extraction_type_group__, which is a composite of the __extraction_type__ variable).
+
+As we learned during our __Data Exploration__ work, the __amount_tsh__ variable represents the "total static head" of a well, a metric that basically indicates the height at which a pump can raise water above its source. As such, the zero values found within the variable are almost certainly invalid since a pump with an actual total static head value of zero would be incapable of producing water from any source located below its output point. Given the fact that 41,639 of the 59,400 data records have a value of "0" for __amount_tsh__, the variable in its raw format is not likely to be useful for predictive modeling purposes. Therefore, replacement of the zero values with imputed values is required if we wish to make use of the variable.
+
+As noted in the __Data Exploration__ section above, the __extraction_type_group__ and __waterpoint_type_group__ categorical variables are each at least somewhat indicative of the type of well deployed at a waterpoint. Every record within the data set has a valid value for each of these variables. Of the two, the __extraction_type_group__, comprised of 13 categories, offers a more granular representation of the data than does __waterpoint_type_group__, which has only six categories. Therefore, we will apply the median median non-zero __amount_tsh__ value for the corresponding __extraction_type_group__ category as the imputed value for each record having an __amount_tsh__ of zero. This approach is implemented in the __R__ code shown below, with a new variable ( __amount_tsh_new__ ) being added to the data set to house the modified __amount_tsh__ values.
 
 ```{r, eval = FALSE}
 # subset to get only non-zero construction year values
@@ -3174,7 +3178,7 @@ rm(atsh_sub, atshz_sub, etg_matsh)
 
 ### Data Prep: gps_height
 
-Approach: A linear model using latitude + longitude as independent variables and gps_height as the dependent variable.
+__Approach__: A linear model using latitude + longitude as independent variables and gps_height as the dependent variable.
 
 The __gps_height__ variable is comprised of more than 20,000 zero values. While some of these zero values may be legitimate, it seems highly unlikely that such a large proportion of the wells represented within the data set could conceivably be located exactly at sea level. Such a large number of questionable variable values suggests that the variable might be excluded in its entirety from any predictive models. However, it is likely that the altitude of a well may offer some predictive value to a model since altitude may play a role in whether a well is functioning or not. For example, the higher the altitude of a well, the larger the distance might be between the wellhead and the underlying water table. As such, we will attempt to impute the altitude of a well by using latitude and longitude coordinates for wells whose __gps_height__ is known.
 
@@ -3192,7 +3196,7 @@ Both the __latitude__ and __longitude__ variables contain a relatively small num
 nrow(subset(tanz, latitude > -1  & longitude == 0 & gps_height == 0) )
 ```
 
-Exclusion of such data records from our imputation work will ensure that the remaining nearly 19,000 zero values within the __gps_height__ variable will be updated with an imputed altitude value that reflect the longitude and latitude coordinates of the corresponding well.
+Exclusion of such data records from our imputation work will ensure that the remaining nearly 19,000 zero values within the __gps_height__ variable will be assigned an imputed altitude value that reflect the longitude and latitude coordinates of the corresponding well. This approach is implemented in the __R__ code shown below, with a new variable ( __gps_height_new__ ) being added to the data set to house the modified __gps_height__ values.
 
 ```{r, eval = FALSE}
 # NOTE: THIS CODE CHUNK IS DISABLED FOR NOW
@@ -3242,9 +3246,12 @@ tanz$gps_height_new[tanz$gps_height_new == 0] <- pred.ghz
 rm(gh, ghz, lm_gh, gpsh, pred.ghz, fit1)
 ```
 
+
 ### Data Prep: Population
 
-Impute using the median non-zero value
+__Approach__: Impute using the median non-zero value.
+
+As noted above in the __Data Exploration__ section, 21,381 data records containing a zero value for the __population__ variable can be found within the data set. Given the widespread lack of non-zero __population__ values throughout the various geographical indicators available within the data set, imputation by means other than by applying the median non-zero __population__ value to each zero value appears to be impractical. The __R__ code shown below implements this approach, with a new variable ( __population_new__ ) being added to the data set to house the modified __population__ values.
 
 ```{r, eval = FALSE}
 # median = 150
@@ -3273,19 +3280,23 @@ Full writeup to follow. Summary of imputation approach is:
 
 - imputed values are loaded into a new variable called __longitude_new__ and __latitude_new__
 
+
 ## Data Prep: Categorical Variables
 
 ### Data Prep: Funder
 
 Due to high coincidence w/ __installer__ NA's, fill __funder__ NA's with "unknown".
 
+
 ### Data Prep: Installer
 
 Due to high coincidence w/ __funder__ NA's, fill __installer__ NA's with "unknown".
 
+
 ### Data Prep: Subvillage
 
 371 NA's. Probably best to fill with "unknown"
+
 
 ### Data Prep: Public Meeting
 
@@ -3305,6 +3316,7 @@ Public meeting is a binary variable with 3,334 NA's so we have 2 options for fil
 
 28166 NA's. Too many to impute due to 2700 possible scheme names. Variable is unlikely to have much predictive value anyway due to high number of possible categorical values.
 
+
 ### Data Prep: Permit
 
 Permit is a binary variable with 3056 NA's so we have 2 options for filling missing values:
@@ -3313,9 +3325,10 @@ Permit is a binary variable with 3056 NA's so we have 2 options for filling miss
 
 2. Fit a binary logistic regression model using a subset of data variables (including the status_group) with __permit__ as the response variable and use predictions to fill missing values
 
+
 ### Data Prep: construction_year
 
-20,709 NA's. Impute missing values using median non-zero __construction_year__ values found for __extraction_type__ and __basin__ categories assigned to a data record. Find both median value and assign the lesser of the two as the imputed __construction_year__ value. This has the benefit of maintaining the original distribution of the variable.
+20,709 NA's. Impute missing values using median non-zero __construction_year__ values found for __extraction_type__ and __basin__ categories assigned to a data record. Find both median values and assign the lesser of the two as the imputed __construction_year__ value. This has the benefit of maintaining the original distribution of the variable.
 
 ```{r, eval = FALSE}
 # subset to get only non-zero construction year values
@@ -3385,3 +3398,9 @@ tanz$cons_yr_new[tanz$cons_yr_new < 1] <- cyz_sub$construction_year
 # memory cleanup
 rm(cy_sub, cyz_sub, et_mcy, basin_mcy, et_med, basin_med)
 ```
+
+
+
+# References
+
+Total Static Head: https://www.wartsila.com/encyclopedia/term/total-static-head

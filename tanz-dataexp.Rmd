@@ -339,7 +339,6 @@ etc_mtsh <- arrange(summarise(group_by(t_atsh, extraction_type_class),
 
 etc_mtsh
 
-
 # check avg tsh for extraction_type_class
 # mean(tanz$amount_tsh[which(tanz$extraction_type_class == 'gravity')])
 
@@ -963,7 +962,7 @@ text(mp, non_func$perc, labels =
         pos = 3, cex = .70)
 ```
 
-Analysis of individual regions reveals that the four regions of Dodoma, Kagera, Mbeya and Tabora all appear to have no non-zero values for the following variables:
+Analysis of individual regions reveals that the four specific regions are found to have no non-zero values for the following variables::
 
 - amount_tsh
 - gps_height
@@ -971,7 +970,14 @@ Analysis of individual regions reveals that the four regions of Dodoma, Kagera, 
 - num_private
 - population
 
-```{r}
+The four regions are:
+
+- Dodoma 
+- Kagera 
+- Mbeya
+- Tabora
+
+```{r, eval = FALSE}
 # Dodoma
 unique(tanz$population[tanz$region == 'Dodoma'])
 unique(tanz$construction_year[tanz$region == 'Dodoma'])
@@ -999,9 +1005,14 @@ unique(tanz$construction_year[tanz$region == 'Tabora'])
 unique(tanz$gps_height[tanz$region == 'Tabora'])
 unique(tanz$amount_tsh[tanz$region == 'Tabora'])
 unique(tanz$num_private[tanz$region == 'Tabora'])
+
 ```
 
-As shown below, these 4 regions comprise 12,115 of the 59,400 records in the data set (20.39%), including 514 of the unique wards and 4644 of the unique subvillages.  This lack of non-zero values makes it highly unlikely that we will be able to derive imputed values for the zero values of the five variables listed above using the geographical indicators provided within the data set.
+As shown below, these 4 regions comprise __12,115__ of the __59,400__ records in the data set __(20.39%)__, including __27__ of the unique __lga__'s, __514__ of the unique __wards__ and __4644__ of the unique __subvillages__.  
+
+The __12,115__ records covered by these regions represent approximately __60%__ of the zero values found within the __gps_height__ (12,115 / 20,438), __population__ (12,115 / 21,381), and __construction_year__ (12,115 / 20,709) variables.
+
+The lack of non-zero values throughout the four indicated regions for the five variables listed above makes it highly unlikely that we will be able to effectively derive imputed values for the zero values of those five variables using the geographical indicators provided within the data set.
 
 ```{r}
 # count num recs w/ these 4 regions = 12115 => 20.39% of all records
@@ -1825,7 +1836,7 @@ length(unique(tanz$extraction_type_group))
 # calc number of wells per extraction_type
 c_extract_tg <- arrange(summarise(group_by(tanz, extraction_type_group), 
                      TotalWells = length(unique(id)) ), desc(TotalWells) )
-head(c_extract_tg, n = 10)
+head(c_extract_tg, n = 20)
 ```
 
 The __extraction_type_group__ indicator appears to represent a narrowing of the breadth of values available via the __extraction_type__ variable into various higher-level overall categories. The __gravity__ type group again accounts for the largest percentage of total wells. 
@@ -3077,14 +3088,70 @@ text(mp, non_func$perc, labels =
 
 A brief description of how missing data values will be imputed where feasible
 
-## Numeric Variables
+## Data Prep: Numeric Variables
 
-### amount_tsh
+### Data Prep: amount_tsh
 
-Imputation based on mean of sum of median __amount_tsh__ values found for corresponding __extraction_type_class__ and __waterpoint_type_group__ values.
+Imputation based on median non-zero __amount_tsh__ value for corresponding __extraction_type_group__ value (NOTE: not all __extraction_type__ values have a non-zero __amount_tsh__ value, hence the need to use __extraction_type_group__).
+
+```{r, eval = FALSE}
+# subset to get only non-zero construction year values
+atsh_sub <- subset(tanz, amount_tsh > 0)
+
+median(atsh_sub$amount_tsh) # overall median is 250
+
+# check median construction_year values by extraction_type
+etg_matsh <- arrange(summarise(group_by(atsh_sub, extraction_type_group), 
+                     MedAtsh = median(amount_tsh) ), desc(MedAtsh) )
+
+etg_matsh
+
+# sanity check
+# tmp <- subset(atsh_sub, extraction_type == 'climax' & amount_tsh > 0)
+
+# round(median(tmp$amount_tsh))
+
+# get the median amount_tsh value for each waterpoint_type
+# wptg_matsh <- arrange(summarise(group_by(atsh_sub, waterpoint_type_group), 
+#                     MedAtsh = median(amount_tsh) ), desc(MedAtsh) )
+
+# wptg_matsh
+
+# subset to get only non-zero construction year values
+atshz_sub <- subset(tanz, amount_tsh == 0)
+
+# add new variable to house imputed values
+tanz$amount_tsh_new <- tanz$amount_tsh
+
+# for each row in cyz_sub find the imputed value to use
+
+for (i in 1:nrow(atshz_sub)) {
+  # assign extraction_type median value
+  atshz_sub$amount_tsh[i] <- 
+    etg_matsh$MedAtsh[etg_matsh$extraction_type_group == atshz_sub$extraction_type_group[i]]
+} # end for i
+
+# put imputed vals into orig data
+tanz$amount_tsh_new[tanz$amount_tsh_new == 0] <- atshz_sub$amount_tsh
+
+######################################
+# check dist of imputed values
+# summary(atshz_sub$amount_tsh)
+
+# summary(tanz$amount_tsh)
+
+# summary(atsh_sub$amount_tsh)
+# hist(atsh_sub$amount_tsh, col = 'yellow')
+
+# summary(tanz$cons_yr_new)
+# hist(tanz$amount_tsh_new, col = 'yellow')
+
+# memory cleanup
+rm(atsh_sub, atshz_sub, etg_matsh)
+```
 
 
-### gps_height
+### Data Prep: gps_height
 
 Approach: A linear model using latitude + longitude as independent variables and gps_height as the dependent variable.
 
@@ -3154,11 +3221,11 @@ tanz$gps_height_new[tanz$gps_height_new == 0] <- pred.ghz
 rm(gh, ghz, lm_gh, gpsh, pred.ghz, fit1)
 ```
 
-### Population
+### Data Prep: Population
 
 Impute using the median non-zero value
 
-```{r}
+```{r, eval = FALSE}
 # median = 150
 summary(tanz$population[tanz$population > 0])
 
@@ -3167,11 +3234,13 @@ tanz$population_new <- tanz$population
 
 tanz$population_new[tanz$population_new == 0] <- median(tanz$population[tanz$population > 0])
 
+hist(tanz$population)
+
 hist(tanz$population_new, col = 'yellow')
 ```
 
 
-### Latitude and Longitude
+### Data Prep: Latitude and Longitude
 
 Full writeup to follow. Summary of imputation approach is:
 
@@ -3183,21 +3252,21 @@ Full writeup to follow. Summary of imputation approach is:
 
 - imputed values are loaded into a new variable called __longitude_new__ and __latitude_new__
 
-## Categorical Variables
+## Data Prep: Categorical Variables
 
-### Funder
+### Data Prep: Funder
 
 Due to high coincidence w/ __installer__ NA's, fill __funder__ NA's with "unknown".
 
-### Installer
+### Data Prep: Installer
 
 Due to high coincidence w/ __funder__ NA's, fill __installer__ NA's with "unknown".
 
-### Subvillage
+### Data Prep: Subvillage
 
 371 NA's. Probably best to fill with "unknown"
 
-### Public Meeting
+### Data Prep: Public Meeting
 
 Public meeting is a binary variable with 3,334 NA's so we have 2 options for filling missing values:
 
@@ -3206,16 +3275,16 @@ Public meeting is a binary variable with 3,334 NA's so we have 2 options for fil
 2. Fit a binary logistic regression model using a subset of data variables (including the status_group) with __public_meeting__ as the response variable and use predictions to fill missing values
 
 
-### Scheme Management
+### Data Prep: Scheme Management
 
 3877 NA's. Can be filled either with "unknown" or via multinomial logistic regression model. No other obvious method of imputing based on variables at hand.
 
 
-### scheme_name
+### Data Prep: scheme_name
 
 28166 NA's. Too many to impute due to 2700 possible scheme names. Variable is unlikely to have much predictive value anyway due to high number of possible categorical values.
 
-### Permit
+### Data Prep: Permit
 
 Permit is a binary variable with 3056 NA's so we have 2 options for filling missing values:
 
@@ -3223,6 +3292,75 @@ Permit is a binary variable with 3056 NA's so we have 2 options for filling miss
 
 2. Fit a binary logistic regression model using a subset of data variables (including the status_group) with __permit__ as the response variable and use predictions to fill missing values
 
-### construction_year
+### Data Prep: construction_year
 
-20,709 NA's. No way to impute based on geographic variables due to many regions, districts, lga's, wards, and subvillages have no non-zero construction year values. May be forced to impute using a median of the non-zero values though such an approach may prove problematic to due large percentage of data values that require imputation. Alternative is to use a linear model. 
+20,709 NA's. Impute missing values using median non-zero __construction_year__ values found for __extraction_type__ and __basin__ categories assigned to a data record. Find both median value and assign the lesser of the two as the imputed __construction_year__ value. This has the benefit of maintaining the original distribution of the variable.
+
+```{r, eval = FALSE}
+# subset to get only non-zero construction year values
+cy_sub <- subset(tanz, construction_year > 0)
+
+median(cy_sub$construction_year) # overall median is 2000
+
+
+# check median construction_year values by extraction_type
+et_mcy <- arrange(summarise(group_by(cy_sub, extraction_type), 
+                     MedCy = median(construction_year) ), desc(MedCy) )
+
+et_mcy
+
+# sanity check
+# tmp <- subset(cy_sub, waterpoint_type == 'communal standpipe' & construction_year > 0)
+
+# round(median(tmp$construction_year))
+
+
+# check median construction_year values by basin
+basin_mcy <- arrange(summarise(group_by(cy_sub, basin), 
+                     MedCy = median(construction_year) ), desc(MedCy) )
+
+basin_mcy
+
+
+# subset to get only non-zero construction year values
+cyz_sub <- subset(tanz, construction_year == 0)
+
+# add new variable to house imputed values
+tanz$cons_yr_new <- tanz$construction_year
+
+# for each row in cyz_sub find the imputed value to use
+
+for (i in 1:nrow(cyz_sub)) {
+  # get extraction_type median value
+  et_med <- et_mcy$MedCy[et_mcy$extraction_type == cyz_sub$extraction_type[i]]
+  
+  # get basin median value
+  basin_med <- basin_mcy$MedCy[basin_mcy$basin == cyz_sub$basin[i]]
+  
+  if (et_med > basin_med) {
+    # assign the older of the two medians to the zero value
+    cyz_sub$construction_year[i] <- basin_med
+  } else {
+    cyz_sub$construction_year[i] <- et_med
+  } # end if
+  
+} # end for i
+
+# put imputed vals into orig data
+tanz$cons_yr_new[tanz$cons_yr_new < 1] <- cyz_sub$construction_year
+
+######################################
+# check dist of imputed values
+# summary(cyz_sub$construction_year)
+
+# summary(tanz$construction_year)
+
+# summary(cy_sub$construction_year)
+# hist(cy_sub$construction_year, col = 'yellow')
+
+# summary(tanz$cons_yr_new)
+# hist(tanz$cons_yr_new, col = 'yellow')
+
+# memory cleanup
+rm(cy_sub, cyz_sub, et_mcy, basin_mcy, et_med, basin_med)
+```

@@ -83,6 +83,28 @@ Please note that the NA totals listed below were calculated *after* converting b
 | waterpoint_type_group| 6               | 0    | composite of waterpoint_type  |
 
 
+Four __region__ names are found to have no non-zero values for the following variables:
+
+- amount_tsh
+- gps_height
+- construction_year
+- num_private
+- population
+
+The four regions are:
+
+- Dodoma 
+- Kagera 
+- Mbeya
+- Tabora
+
+These 4 regions comprise __12,115__ of the __59,400__ records in the data set __(20.39%)__, including __27__ of the unique __lga__'s, __514__ of the unique __wards__ and __4644__ of the unique __subvillages__.  
+
+The __12,115__ records covered by these regions represent approximately __60%__ of the zero values found within the __gps_height__ (12,115 / 20,438), __population__ (12,115 / 21,381), and __construction_year__ (12,115 / 20,709) variables.
+
+The lack of non-zero values throughout the four indicated regions for the five variables listed above makes it highly unlikely that we will be able to effectively derive imputed values for the zero values of those five variables using the geographical indicators provided within the data set.
+
+
 ### Administrative / Non-Predictive Variables
 
 | Administrative Variables | Data Type |

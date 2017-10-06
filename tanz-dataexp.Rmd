@@ -3,9 +3,6 @@ title: "Tanzania Data Exploration"
 author: "James Topor"
 date: "September 22, 2017"
 output:
-  pdf_document:
-    toc: yes
-    toc_depth: '3'
   html_document:
     highlight: tango
     theme: cerulean
@@ -15,12 +12,16 @@ output:
       collapsed: yes
       number_sections: yes
       smooth_scroll: no
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
 ---
 
 ```{r, echo = FALSE, warning=FALSE, message=FALSE}
 library(knitr)
 library(tidyr)
 library(dplyr)
+library(lubridate) # used to extract year from date_recorded
 library(nnet) # for multinom logistic regression
 library(class) # for KNN
 ```
@@ -208,7 +209,6 @@ The lack of non-zero values throughout the four indicated regions for the five v
 The administrative variables shown above have no predictive value and will be ignored for purposes of model building. The __id__ variable serves as a unique identifier for each data record within the data set. The __date_recorded__ variable indicates the date on which the each record presented within the data was collected, while the __recorded_by__ variable contains the name of the survey firm that collected the data.
 
 The numeric and categorical variables listed above are explored in detail below.
-
 
 ## Exploration of Numeric Variables
 
@@ -3104,7 +3104,6 @@ text(mp, non_func$perc, labels =
         pos = 3, cex = .75)
 ```
 
-
 # Data Preparation
 
 A brief description of how missing data values will be imputed where feasible
@@ -3378,6 +3377,7 @@ df["longitude_new"] = longitude
 df["latitude_new"] = latitude
 ```
 
+
 ## Data Prep: Categorical Variables
 
 ### Data Prep: Funder
@@ -3425,14 +3425,17 @@ Permit is a binary variable with 3056 NA's so we have 2 options for filling miss
 
 ### Data Prep: construction_year
 
-20,709 NA's. Impute missing values using median non-zero __construction_year__ values found for __extraction_type__ and __basin__ categories assigned to a data record. Find both median values and assign the lesser of the two as the imputed __construction_year__ value. This has the benefit of maintaining the original distribution of the variable.
+__Approach__: Impute missing values using median non-zero __construction_year__ values found for __extraction_type__ and __basin__ categories assigned to a data record. Find both median values and assign the lesser of the two as the imputed __construction_year__ value. This approach has the benefit of largely maintaining the original distribution of the non-zero values found within the variable.
+
+Our data exploration work identified 20,709 missing __construction_year__ values within the data set. As we alluded to in the analysis of the __amount_tsh__ variable, other variables within the data set (e.g., __extraction_type__, __extraction_type_group__, __waterpoint_type__, etc.) are at least somewhat indicative of the type of well deployed at each waterpoint. Assuming similar types of wells were generally installed within similar chronological timeframes, it seems reasonable to conclude that use of the median non-zero __construction_year__ value found for similar types of wells may be an effective manner of filling the missing data values.
+
+The __R__ code shown below implements this approach while also ensuring that the selected median __construction_year__ value does not exceed the year value of the data record's __date_recorded__ variable. Logically, an imputed __construction_year__ value should not exceed the year value during which the data was recorded for a given well.
 
 ```{r, eval = FALSE}
 # subset to get only non-zero construction year values
 cy_sub <- subset(tanz, construction_year > 0)
 
 median(cy_sub$construction_year) # overall median is 2000
-
 
 # check median construction_year values by extraction_type
 et_mcy <- arrange(summarise(group_by(cy_sub, extraction_type), 
@@ -3462,26 +3465,48 @@ tanz$cons_yr_new <- tanz$construction_year
 # for each row in cyz_sub find the imputed value to use
 
 for (i in 1:nrow(cyz_sub)) {
+  
+  # get year value from date_recorded
+  yr_rec <- year(as.Date(cyz_sub$date_recorded[i], format = "%m/%d/%Y"))
+  
   # get extraction_type median value
   et_med <- et_mcy$MedCy[et_mcy$extraction_type == cyz_sub$extraction_type[i]]
+
   
   # get basin median value
   basin_med <- basin_mcy$MedCy[basin_mcy$basin == cyz_sub$basin[i]]
+
   
+  # check median vals against each other + ensure median < year recorded
   if (et_med > basin_med) {
-    # assign the older of the two medians to the zero value
-    cyz_sub$construction_year[i] <- basin_med
+    
+    if((yr_rec < basin_med)) {
+      cyz_sub$construction_year[i] <- yr_rec
+    }
+    else {
+      # assign the older of the two medians to the zero value
+      cyz_sub$construction_year[i] <- basin_med
+    } # end if yr_rec
+      
   } else {
-    cyz_sub$construction_year[i] <- et_med
-  } # end if
+     if((yr_rec < et_med)) {
+      cyz_sub$construction_year[i] <- yr_rec
+     }
+    else {   
+      cyz_sub$construction_year[i] <- et_med
+    } # end if yr_rec
+     
+  } # end else
+  
   
 } # end for i
 
 # put imputed vals into orig data
 tanz$cons_yr_new[tanz$cons_yr_new < 1] <- cyz_sub$construction_year
 
+
 ######################################
-# check dist of imputed values
+# integrity checks
 # summary(cyz_sub$construction_year)
 
 # summary(tanz$construction_year)
@@ -3493,9 +3518,39 @@ tanz$cons_yr_new[tanz$cons_yr_new < 1] <- cyz_sub$construction_year
 # hist(tanz$cons_yr_new, col = 'yellow')
 
 # memory cleanup
-rm(cy_sub, cyz_sub, et_mcy, basin_mcy, et_med, basin_med)
+rm(cy_sub, cyz_sub, et_mcy, basin_mcy, et_med, basin_med, yr_rec)
 ```
 
+
+## New Variables Added
+
+### Adding a New Numeric Variable: "pump_age"
+
+The data records provided in the data set appear to have (for the most part) recorded during the 2011 - 2013 timeframe. Therefore, the age of the observations provided within the data set varies from record to record, with some observations being older (e.g., those from 2011) than those which were recorded later (e.g., those from 2013). In fact, the __date_recorded__ allows us to estimate the age of a pump by subtracting a data record's __construction_year__ value from the __date_recorded__ variable's 'year' component. 
+
+Since the age of a pump may prove to be predictive of its status (i.e., 'functional', etc.), we add a new __pump_age__ variable to the data set via the subtract logic explained above. The __R__ code shown below implements this logic while also ensuring that all wells have an age of at least one year. 
+
+```{r, eval = FALSE}
+# create new variable: well_age = year date recorded - construction_year (including imputed values)
+
+# get year value from date_recorded
+tmp_drec <- year(as.Date(tanz$date_recorded, format = "%m/%d/%Y"))
+
+# subtract new construction year values (imputations) from date recorded 'year' value
+tanz$pump_age <- tmp_drec - tanz$cons_yr_new
+
+# set any zero values to 1: new wells are considered to be 1 year old due to uncertainty
+tanz$pump_age[tanz$pump_age < 1] <- 1
+
+######################################
+# integrity checks
+
+# summary(tanz$pump_age)
+
+# summary(tanz$cons_yr_new)
+
+# tmp <- tanz[tanz$pump_age < 0,]
+```
 
 
 # References

@@ -1527,6 +1527,94 @@ text(mp, non_func$perc, labels =
         pos = 3, cex = .75)
 ```
 
+In an attempt to determine whether the lack of a __public_meeting__ value is related to the geographical location of a well, we aggregate the data by __ward__ and calculate the following:
+
+- the total number of wells per ward
+
+- the number of wells within a ward having a __public_meeting__ value of __TRUE__
+
+- the percentage of wells within a ward having a __public_meeting__ value of __TRUE__
+
+- the number of wells within a ward having an unknown __public_meeting__ value
+
+- the percentage of wells within a ward having an uknown __public_meeting__
+
+
+```{r}
+# c_ward contains the total number of wells by ward
+ward_tmp <- tanz[, c("id", "ward", "public_meeting")]
+
+# fill in NA's so data can be grouped properly
+ward_tmp$public_meeting[is.na(ward_tmp$public_meeting)] <- "unknown"
+
+# aggregate the data
+ward_meet_true <- arrange(summarise(group_by(ward_tmp, ward), 
+                               TotalWells = length(unique(id)),
+                               MeetUnk = sum(public_meeting == "unknown"),
+                     MeetTrue = sum(public_meeting == "TRUE") ), desc(TotalWells) )
+
+# calculate percentage of TRUE and unknown meeting values
+ward_meet_true$perc <- ward_meet_true$MeetTrue /  ward_meet_true$TotalWells
+ward_meet_true$unk_perc <- ward_meet_true$MeetUnk /  ward_meet_true$TotalWells
+
+head(ward_meet_true, n = 20)
+```
+
+Summary statistics for the percentage of unknown __public_meeting__ values per __ward__ indicate that one or more __ward__'s within the data set have no valid __public_meeting__ values:
+
+```{r}
+# shows some wards have 100% unknowns
+summary(ward_meet_true$unk_perc)
+```
+
+In fact, we find a total of 43 such wards within the data set, as shown below.
+
+```{r}
+# find wards with 100% unknowns = 43 wards
+nrow(subset(ward_meet_true, unk_perc == 1))
+```
+
+What this tells us is that if we wish to impute __public_meeting__ values for the data records lacking valid values, we should not attempt to do so solely on the basis of a record's __ward__ value since a significant number of __wards__ contain no valid __public_meeting__ values from which a reasonable imputation for the __public_meeting__ indicator can be derived.
+
+We explore the __lga__ variable using the same aggregation techniques described above for the __ward__ variable,
+
+```{r}
+# memory cleanup
+rm(ward_tmp)
+
+# subset for fast aggregation
+lga_tmp <- tanz[, c("id", "lga", "public_meeting")]
+
+# fill in NA's so data can be grouped properly
+lga_tmp$public_meeting[is.na(lga_tmp$public_meeting)] <- "unknown"
+
+# aggregate the data
+lga_meet_true <- arrange(summarise(group_by(lga_tmp, lga), 
+                               TotalWells = length(unique(id)),
+                              MeetUnk = sum(public_meeting == "unknown"),
+                     MeetTrue = sum(public_meeting == "TRUE") ), desc(TotalWells) )
+
+# calculate percentage of TRUE and unknown meeting values
+lga_meet_true$perc <- lga_meet_true$MeetTrue /  lga_meet_true$TotalWells
+lga_meet_true$unk_perc <- lga_meet_true$MeetUnk /  lga_meet_true$TotalWells
+head(lga_meet_true, n = 20)
+```
+
+Summary statistics for the percentage of unknown __public_meeting__ values per __lga__ indicate that all __lga__'s within the data set have at least some valid __public_meeting__ values:
+
+```{r}
+# shows no lga's have 100% unknowns
+summary(lga_meet_true$unk_perc)
+```
+
+As such, if we wish to impute __public_meeting__ values for the data records lacking valid values, use of a record's __ward__ and __lga__ values together may allow us to infer whether or not the missing value should be __TRUE__ or __FALSE__ based on the percentage of wells within the __ward__ or __lga__ sharing a __TRUE__ value. For example, if the percentage of __TRUE__ __public_meeting__ values within a __ward__ (or __lga__ if the __ward__ lacks any valid __public_meeting__ values) exceeds 50%, it would seem reasonable to assign a value of __TRUE__ to any missing __public_meeting__ value pertaining to that __ward__ (or __lga__). This approach is applied in the __Data Preparation__ section of this document.
+
+```{r, echo = FALSE}
+# memory cleanup
+rm(lga_tmp)
+```
+
+
 ### lga
 
 The __lga__ variable provides another Tanzania-specific geographic identifier within which a given well is located. The summary statistics shown below indicate a total of 125 lga values within the data set, with each record having a valid value. The 20 lga's having the largest number of well installations are summarized in the table below.
@@ -1541,6 +1629,7 @@ c_lga <- arrange(summarise(group_by(tanz, lga),
 head(c_lga, n = 20)
 ```
 
+
 ### Ward
 
 The __ward__ variable represents the name of the geographic ward within which a given well is located. The summary statistics shown below indicate a total of 2092 distinct ward values within the data set, with each record having a valid value. The 20 wards having the largest number of well installations are summarized in the table below.
@@ -1554,6 +1643,7 @@ c_ward <- arrange(summarise(group_by(tanz, ward),
                      TotalWells = length(unique(id)) ), desc(TotalWells) )
 head(c_ward, n = 20)
 ```
+
 
 ### Scheme Management
 
@@ -1665,6 +1755,7 @@ head(c_scheme_n, n = 20)
 
 The large percentage of records lacking a defined scheme name combined with the lack of a definitive list of valid scheme names makes it unlikely that imputation of the missing values will prove feasible. As such, the __scheme_name__ variable appears unlikely to be useful for predictive modeling purposes.
 
+
 ### Permit
 
 The __permit__ variable is a binary True/False indicator. Summary statistics indicate that 28,166 records within the data set have no valid __permit__ value.
@@ -1755,6 +1846,130 @@ mp <- barplot(non_func$perc, names.arg = non_func$permit,
 text(mp, non_func$perc, labels = 
        format(round(non_func$perc, 3), 4),
         pos = 3, cex = .75)
+```
+
+In an attempt to determine whether the lack of a __permit__ value is related to the geographical location of a well, we aggregate the data by __ward__ and calculate the following:
+
+- the total number of wells per ward
+
+- the number of wells within a ward having a __permit__ value of __TRUE__
+
+- the percentage of wells within a ward having a __permit__ value of __TRUE__
+
+- the number of wells within a ward having an unknown __permit__ value
+
+- the percentage of wells within a ward having an uknown __permit__
+
+```{r}
+# c_ward contains the total number of wells by ward
+ward_tmp <- tanz[, c("id", "ward", "permit")]
+
+# fill in NA's so data can be grouped properly
+ward_tmp$permit[is.na(ward_tmp$permit)] <- "unknown"
+
+# aggregate the data
+ward_perm_true <- arrange(summarise(group_by(ward_tmp, ward), 
+                               TotalWells = length(unique(id)),
+                               PermUnk = sum(permit == "unknown"),
+                     PermTrue = sum(permit == "TRUE") ), desc(TotalWells) )
+
+# calculate percentage of TRUE and unknown meeting values
+ward_perm_true$perc <- ward_perm_true$PermTrue /  ward_perm_true$TotalWells
+ward_perm_true$unk_perc <- ward_perm_true$PermUnk /  ward_perm_true$TotalWells
+
+head(ward_perm_true, n = 20)
+```
+
+Summary statistics for the percentage of unknown __permit__ values per __ward__ indicate that one or more __ward__'s within the data set have no valid __permit__ values:
+
+```{r}
+# shows some wards have 100% unknowns
+summary(ward_perm_true$unk_perc)
+```
+
+In fact, we find a total of 73 such wards within the data set, as shown below.
+
+```{r}
+# find wards with 100% unknowns = 73 wards
+nrow(subset(ward_perm_true, unk_perc == 1))
+```
+
+What this tells us is that if we wish to impute __permit__ values for the data records lacking valid values, we should not attempt to do so solely via a record's __ward__ value since a significant number of __wards__ contain no valid __permit__ values from which a reasonable imputation for the __permit__ indicator can be derived.
+
+As an alternative, we explore the __lga__ variable using the same aggregation techniques described above for the __ward__ variable,
+
+```{r}
+# memory cleanup
+rm(ward_tmp)
+
+# subset for fast aggregation
+lga_tmp <- tanz[, c("id", "lga", "permit")]
+
+# fill in NA's so data can be grouped properly
+lga_tmp$permit[is.na(lga_tmp$permit)] <- "unknown"
+
+# aggregate the data
+lga_perm_true <- arrange(summarise(group_by(lga_tmp, lga), 
+                               TotalWells = length(unique(id)),
+                              PermUnk = sum(permit == "unknown"),
+                     PermTrue = sum(permit == "TRUE") ), desc(TotalWells) )
+
+# calculate percentage of TRUE and unknown meeting values
+lga_perm_true$perc <- lga_perm_true$PermTrue /  lga_perm_true$TotalWells
+lga_perm_true$unk_perc <- lga_perm_true$PermUnk /  lga_perm_true$TotalWells
+head(lga_perm_true, n = 20)
+```
+
+Summary statistics for the percentage of unknown __permit__ values per __lga__ indicate that one or more __lga__'s within the data set have no valid __permit__ values:
+
+```{r}
+# shows no lga's have 100% unknowns
+summary(lga_perm_true$unk_perc)
+```
+
+In fact, we find a total of 3 such __lga__'s within the data set, as shown below.
+
+```{r}
+# find wards with 100% unknowns = 3 lga's
+nrow(subset(lga_perm_true, unk_perc == 1))
+```
+
+We now explore the __region__ variable using the same aggregation techniques described above for the __ward__ and __lga__ variables,
+
+```{r}
+# memory cleanup
+rm(lga_tmp)
+
+# subset for fast aggregation
+reg_tmp <- tanz[, c("id", "region", "permit")]
+
+# fill in NA's so data can be grouped properly
+reg_tmp$permit[is.na(reg_tmp$permit)] <- "unknown"
+
+# aggregate the data
+reg_perm_true <- arrange(summarise(group_by(reg_tmp, region), 
+                               TotalWells = length(unique(id)),
+                              PermUnk = sum(permit == "unknown"),
+                     PermTrue = sum(permit == "TRUE") ), desc(TotalWells) )
+
+# calculate percentage of TRUE and unknown meeting values
+reg_perm_true$perc <- reg_perm_true$PermTrue /  reg_perm_true$TotalWells
+reg_perm_true$unk_perc <- reg_perm_true$PermUnk /  reg_perm_true$TotalWells
+head(reg_perm_true, n = 20)
+```
+
+Summary statistics for the percentage of unknown __permit__ values per __region__ indicate that all __region__'s within the data set have at least some valid __permit__ values:
+
+```{r}
+# shows no lga's have 100% unknowns
+summary(reg_perm_true$unk_perc)
+```
+
+As such, if we wish to impute __permit__ values for the data records lacking valid values, use of a record's __lga__ and __region__ values may allow us to infer whether or not the missing value should be __TRUE__ or __FALSE__ based on the percentage of wells within the __lga__ or __region__ sharing a __TRUE__ value. For example, if the percentage of __TRUE__ __permit__ values within an __lga__ exceeds 50%, it would seem reasonable to assign a value of __TRUE__ to any missing __permit__ value pertaining to that __lga__. However, if the specific __lga__ lacks any valid __permit__ values, we can instead make use of the percentage of __TRUE__ __permit__ values within the associated __region__ and apply the same 50% thresholding approach described for use with the __lga__ variable's values. This approach is applied in the __Data Preparation__ section of this document.
+
+```{r, echo = FALSE}
+# memory cleanup
+rm(reg_tmp)
 ```
 
 
@@ -3397,11 +3612,59 @@ Due to high coincidence w/ __funder__ NA's, fill __installer__ NA's with "unknow
 
 ### Data Prep: Public Meeting
 
-Public meeting is a binary variable with 3,334 NA's so we have 2 options for filling missing values:
+__Approach__: If the percentage of __TRUE__ __public_meeting__ values within a __ward__ (or __lga__ if the __ward__ contains no valid __public_meeting__ values) exceeds 50%, assign a value of __TRUE__ to the missing value.
 
-1. Simply fill NA's with "unknown"
+Our __Data_Exploration__ work found 3,334 missing __public_meeting__ values within the data set. As part of that analysis we also calculated the percentage of __TRUE__ public meeting values within each __ward__ and __lga__, and we verified that every __lga__ contains at least some valid __public_meeting__ values, whereas many __wards__ contained none. 
 
-2. Fit a binary logistic regression model using a subset of data variables (including the status_group) with __public_meeting__ as the response variable and use predictions to fill missing values
+The imputation approach applied for the __public_meeting__ variable thereby makes use of a simple thresholding approach, whereby a missing value is assigned a __TRUE__ or __FALSE__ value relative to the percentage of __TRUE__ public meeting values within the __ward__ ( or __lga__ if the __ward__ lacks a valid __public_meeting__ value) indicated for the data record in question. If that percentage exceeds 50%, a __TRUE__ value is imputed for the missing data value, otherwise a __FALSE__ value is imputed. The __R__ code shown below implements this approach, with a new variable ( __public_meeting_new__ ) being added to the data set to house the modified __public_meeting__ values.
+
+
+```{r, eval = FALSE}
+
+# NOTE: the ward_meet_true and lga_meet_true data frames are built in the Data 
+# Exploration section for the public_meeting variable.
+
+# subset to get only missing public_meeting values
+pmeet_sub <- subset(tanz, is.na(public_meeting))
+
+# add new variable to house imputed values
+tanz$public_meeting_new <- tanz$public_meeting
+
+# for each row in pmeet_sub find the imputed value to use
+for (i in 1:nrow(pmeet_sub)) {
+
+  # if the ward has valid public_meeting values, impute based on ward
+  if (ward_meet_true$unk_perc[ward_meet_true$ward == pmeet_sub$ward[i]] < 1) {
+
+    if (ward_meet_true$perc[ward_meet_true$ward == pmeet_sub$ward[i]] >= .50) {
+      pmeet_sub$public_meeting[i] <- "TRUE"
+    } else {
+      pmeet_sub$public_meeting[i] <- "FALSE"
+    }
+        
+  # else impute based on lga  
+  } else {
+
+    if (lga_meet_true$perc[lga_meet_true$lga == pmeet_sub$lga[i]] >= .50) {
+      pmeet_sub$public_meeting[i] <- "TRUE"
+    } else {
+      pmeet_sub$public_meeting[i] <- "FALSE"
+    }
+    
+  } # end else
+  
+} # end for i
+
+# put imputed vals into orig data
+tanz$public_meeting_new[is.na(tanz$public_meeting_new)] <- pmeet_sub$public_meeting
+
+######################################
+# sanity check - make sure no NA's remain
+# sum(is.na(tanz$public_meeting_new))
+
+# memory cleanup
+rm(pmeet_sub, ward_meet_true, lga_meet_true)
+```
 
 
 ### Data Prep: Scheme Management
@@ -3414,13 +3677,69 @@ Public meeting is a binary variable with 3,334 NA's so we have 2 options for fil
 28166 NA's. Too many to impute due to 2700 possible scheme names. Variable is unlikely to have much predictive value anyway due to high number of possible categorical values.
 
 
+
 ### Data Prep: Permit
 
-Permit is a binary variable with 3056 NA's so we have 2 options for filling missing values:
+__Approach__: If the percentage of __TRUE__ __permit__ values within a __ward__ (or __lga__ or __region__ if the __ward__ or __lga__ contains no valid __permit__ values) exceeds 50%, assign a value of __TRUE__ to the missing value.
 
-1. Simply fill NA's with "unknown"
+Our __Data_Exploration__ work found 3,056 missing __permit__ values within the data set. As part of that analysis we also calculated the percentage of __TRUE__ public meeting values within each __ward__, __lga__, and __region__, and we verified that every __region__ contains at least some valid __permit__ values, whereas many __wards__ and three __lga__'s contained none. 
 
-2. Fit a binary logistic regression model using a subset of data variables (including the status_group) with __permit__ as the response variable and use predictions to fill missing values
+The imputation approach applied for the __permit__ variable thereby makes use of a simple thresholding approach, whereby a missing value is assigned a __TRUE__ or __FALSE__ value relative to the percentage of __TRUE__ __permit__ values within the __ward__  (or __lga__ or __region__ if the __ward__ or __lga__ lacks any valid __permit__ values) indicated for the data record in question. If that percentage exceeds 50%, a __TRUE__ value is imputed for the missing data value, otherwise a __FALSE__ value is imputed. The __R__ code shown below implements this approach, with a new variable ( __permit_new__ ) being added to the data set to house the modified __permit__ values.
+
+```{r, eval = FALSE}
+
+# NOTE: the ward_perm_true, lga_perm_true and reg_perm_true data frames are 
+# created within the Data Exploration narrative for the permit variable
+
+# subset to get only missing permit values
+permit_sub <- subset(tanz, is.na(permit))
+
+# add new variable to house imputed values
+tanz$permit_new <- tanz$permit
+
+# for each row in pmeet_sub find the imputed value to use
+for (i in 1:nrow(permit_sub)) {
+  
+  # if the ward has valid permit values, impute based on lga
+  if (ward_perm_true$unk_perc[ward_perm_true$ward == permit_sub$ward[i]] < 1) {
+
+      if (ward_perm_true$perc[ward_perm_true$ward == permit_sub$ward[i]] >= .50) {
+        permit_sub$permit[i] <- "TRUE"
+      } else {
+        permit_sub$permit[i] <- "FALSE"
+      }
+        
+  # if the lga has valid permit values, impute based on lga
+  } else if (lga_perm_true$unk_perc[lga_perm_true$lga == permit_sub$lga[i]] < 1) {
+    
+      if (lga_perm_true$perc[lga_perm_true$lga == permit_sub$lga[i]] >= .50) {
+        permit_sub$permit[i] <- "TRUE"
+      } else {
+        permit_sub$permit[i] <- "FALSE"
+      }
+  
+  # else impute based on region
+  } else {
+
+    if (reg_perm_true$perc[reg_perm_true$region == permit_sub$region[i]] >= .50) {
+      permit_sub$permit[i] <- "TRUE"
+    } else {
+      permit_sub$permit[i] <- "FALSE"
+    }
+  } # end else
+  
+} # end for i
+
+# put imputed vals into orig data
+tanz$permit_new[is.na(tanz$permit_new)] <- permit_sub$permit
+
+######################################
+# sanity check
+sum(is.na(tanz$permit_new))
+
+# memory cleanup
+rm(lga_perm_true, reg_perm_true, permit_sub)
+```
 
 
 ### Data Prep: construction_year

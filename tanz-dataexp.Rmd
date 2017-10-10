@@ -1774,13 +1774,13 @@ Analysis of the __scheme_management__ variable's missing values reveals the foll
 
 2. Instances of missing __scheme_management__ values are not correlated in any way with missing __public_meeting__ or __permit__ values, despite the fact that the missing value counts for each of those variables are somewhat similar.
 
-3. Aggregating by geographic variables also fails to produce a even single valid __scheme_management__ value for many __subvillages__ and most __wards__. At the __lga__ and __region__ levels we can generally find at least several valid values per __lga__ or __region__, though some __lga__'s contain only a single valid value.
+3. Aggregating by geographic variables also fails to produce even a single valid __scheme_management__ value for many __subvillages__ and most __wards__. At the __lga__ and __region__ levels we can generally find at least several valid values per __lga__ or __region__, though some __lga__'s contain only a single valid value.
 
 4. Aggregating at the __ward__ level shows that 75 wards lack any valid __scheme_management__ value, and those 75 wards cover 1,413  of the 3,877 (36.4%) of the missing scheme_management values.
 
-5. At the __lga__ level it appears as though nearly every lga has at least one valid scheme_management value. However, in some lga's the number of unknowns is an order of magnitude greater than the number of known values. For example, in the __lga__ of Kahama there are 736 wells having an unknown __scheme_management__ value and only 100 wells with known values that a spread across several distinct __scheme_management__ categories.
+5. At the __lga__ level it appears as though nearly every lga has at least one valid scheme_management value. However, in some lga's the number of unknowns is an order of magnitude greater than the number of known values. For example, in the __lga__ of Kahama there are 736 wells having an unknown __scheme_management__ value and only 100 wells with known values that are spread across several distinct __scheme_management__ categories.
 
-One possible approach to dealing with the missing values would assign the most frequently occurring valid __scheme_management__ value found with the corresponding __ward__ or __lga__ as the imputed value. However, that approach seems inappropriate since many wards and lga's are dominated by unknown values: in such instances the most frequently occurring valid value will likely represent a relatively small percentage of the total number of data records for a __ward__ or __lga__, and assigning that value to a missing __scheme_management__ record would likely introduce far too much inappropriate statistical bias within the data set. As such, it may be preferable to simply mark the missing values as "unknown" to prevent the introduction of such bias.
+One possible approach to dealing with the missing values would be to assign the most frequently occurring valid __scheme_management__ value found with the corresponding __ward__ or __lga__ as the imputed value. However, that approach seems inappropriate since many wards and lga's are dominated by unknown values: in such instances the most frequently occurring valid value will likely represent a relatively small percentage of the total number of data records for a __ward__ or __lga__, and assigning that value to a missing __scheme_management__ record would likely introduce far too much inappropriate statistical bias within the data set. As such, it may be preferable to simply mark the missing values as "unknown" to prevent the introduction of such bias.
 
 ```{r, echo = FALSE, eval = FALSE}
 # c_ward contains the total number of wells by ward
@@ -3891,7 +3891,7 @@ rm(pmeet_sub, ward_meet_true, lga_meet_true)
 
 ### Data Prep: Scheme Management
 
-Data exploration work showed that imputation for missing __scheme_management__ values was unlikely to be effective. Therefore, we will simply a value of "unknown" to the missing data values found within the variable. This approach is implemented in the __R__ code shown below. Please note that no new variable is created since imputed values are not being applied to the missing data values.
+Our data exploration work showed that imputation for missing __scheme_management__ values is unlikely to be effective. Therefore, we will simply assign a value of "unknown" to the missing data values found within the variable. This approach is implemented in the __R__ code shown below. Please note that no new variable is created since imputed values are not being applied to the missing data values.
 
 ```{r, eval = FALSE}
 # assign "unknown" to NA's. No need to create a new variable
@@ -3903,7 +3903,7 @@ tanz$scheme_management[is.na(tanz$scheme_management)] <- "unknown"
 
 ### Data Prep: scheme_name
 
-With 2700 identifiable distinct values and 28,166 of the 54,900 records having missing values for the variable, __scheme_name__ appears to be a poor candidate for an effective and statistically valid imputation approach. There appears to be no clear relationship between the known __scheme_name__ values and other variable's values, and the scheme names themselves seem likely to have been assigned/constructed without the use of an overriding common set of naming guidelines. Therefore, we will simply a value of "unknown" to the missing data values found within the variable. This approach is implemented in the __R__ code shown below. Please note that no new variable is created since imputed values are not being applied to the missing data values.
+With 2700 identifiable distinct values and 28,166 of the 54,900 records having missing values for the variable, __scheme_name__ appears to be a poor candidate for an effective and statistically valid imputation approach. There appears to be no clear relationship between the known __scheme_name__ values and other variable's values, and the scheme names themselves seem likely to have been assigned/constructed without the use of an overriding common set of naming guidelines. Therefore, we will simply assign a value of "unknown" to the missing data values found within the variable. This approach is implemented in the __R__ code shown below. Please note that no new variable is created since imputed values are not being applied to the missing data values.
 
 ```{r, eval = FALSE}
 # assign "unknown" to NA's. No need to create a new variable

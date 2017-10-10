@@ -1774,9 +1774,9 @@ Analysis of the __scheme_management__ variable's missing values reveals the foll
 
 2. Instances of missing __scheme_management__ values are not correlated in any way with missing __public_meeting__ or __permit__ values, despite the fact that the missing value counts for each of those variables are somewhat similar.
 
-3. Aggregating by geographic variables also fails to produce even a single valid __scheme_management__ value for many __subvillages__ and most __wards__. At the __lga__ and __region__ levels we can generally find at least several valid values per __lga__ or __region__, though some __lga__'s contain only a single valid value.
+3. Aggregating by geographic variables also fails to produce even a single valid __scheme_management__ value for many __subvillages__ and __wards__. At the __lga__ and __region__ levels we can generally find at least several valid values per __lga__ or __region__, though some __lga__'s contain only a single valid value.
 
-4. Aggregating at the __ward__ level shows that 75 wards lack any valid __scheme_management__ value, and those 75 wards cover 1,413  of the 3,877 (36.4%) of the missing scheme_management values.
+4. Aggregating at the __ward__ level shows that 75 wards lack any valid __scheme_management__ value, and those 75 wards cover 1,413 (36.4%) of the 3,877 missing scheme_management values.
 
 5. At the __lga__ level it appears as though nearly every lga has at least one valid scheme_management value. However, in some lga's the number of unknowns is an order of magnitude greater than the number of known values. For example, in the __lga__ of Kahama there are 736 wells having an unknown __scheme_management__ value and only 100 wells with known values that are spread across several distinct __scheme_management__ categories.
 

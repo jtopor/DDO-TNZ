@@ -803,12 +803,13 @@ c_basin <- arrange(summarise(group_by(tanz, basin),
 head(c_basin, n = 10)
 ```
 
-Plots for the __basin__ variable show a wide variance in the proportions of functional wells between regions: Three regions (Lake Nyasa, Pangani, Rufiji) have more than 60% of their wells functioning while the Southern Coast region has only 37.2% of its wells functioning. In fact, five of the nine regions fail to achieve the overall "functional" metric of 54.3%. The underlying reasons for these disparities should be explored to determine whether or not the underperforming basins can be improved via the application of well management methods/practices being employed within the outperforming basins.
+Plots for the __basin__ variable show a wide variance in the proportions of functional wells between basins: Three (Lake Nyasa, Pangani, Rufiji) have more than 60% of their wells functioning while the Southern Coast basin has only 37.2% of its wells functioning. In fact, five of the nine basins fail to achieve the overall "functional" metric of 54.3%. The underlying reasons for these disparities should be explored to determine whether or not the underperforming basins can be improved via the application of well management methods/practices being employed within the outperforming basins.
 
 ```{r, echo = FALSE}
 # basin
 c_basin_status <- arrange(summarise(group_by(tanz, basin, label), 
                      TotalWells = length(unique(id)) ), sort(basin) )
+
 # c_basin_status
 
 # init percentage column
@@ -838,6 +839,8 @@ mp <- barplot(funcw$perc, names.arg = funcw$basin,
           'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
 )
+# add a line indicating overall functional percentage
+abline(h = functional[[1]], lty = 2, lwd = 1.5, col = "blue")
         
 # write the percentage values above the individual bars in the plot
 text(mp, funcw$perc, labels = 
@@ -854,6 +857,8 @@ mp <- barplot(func_nr$perc, names.arg = func_nr$basin,
           c(0,0.5), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
 )
+# add a line indicating overall func needs repair percentage
+abline(h = func_n_rep[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, func_nr$perc, labels = 
@@ -870,6 +875,8 @@ mp <- barplot(non_func$perc, names.arg = non_func$basin,
           c(0, 1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
 )
+# add a line indicating overall non-functional percentage
+abline(h = n_func[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, non_func$perc, labels = 
@@ -944,6 +951,8 @@ mp <- barplot(funcw$perc, names.arg = funcw$region,
           'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
 )
+# add a line indicating overall functional percentage
+abline(h = functional[[1]], lty = 2, lwd = 1.5, col = "blue")
         
 # write the percentage values above the individual bars in the plot
 text(mp, funcw$perc, labels = 
@@ -960,7 +969,9 @@ mp <- barplot(func_nr$perc, names.arg = func_nr$region,
           c(0,0.5), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
 )
-        
+# add a line indicating overall func needs repair percentage
+abline(h = func_n_rep[[1]], lty = 2, lwd = 1.5, col = "red")
+
 # write the percentage values above the individual bars in the plot
 text(mp, func_nr$perc, labels = 
        format(round(func_nr$perc, 3), 4),
@@ -976,6 +987,8 @@ mp <- barplot(non_func$perc, names.arg = non_func$region,
           c(0, 1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
 )
+# add a line indicating overall non-functional percentage
+abline(h = n_func[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, non_func$perc, labels = 
@@ -1108,6 +1121,8 @@ mp <- barplot(funcw$perc, names.arg = funcw$region_code,
           'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
 )
+# add a line indicating overall functional percentage
+abline(h = functional[[1]], lty = 2, lwd = 1.5, col = "blue")
         
 # write the percentage values above the individual bars in the plot
 text(mp, funcw$perc, labels = 
@@ -1124,6 +1139,8 @@ mp <- barplot(func_nr$perc, names.arg = func_nr$region_code,
           c(0,0.5), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
 )
+# add a line indicating overall func needs repair percentage
+abline(h = func_n_rep[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, func_nr$perc, labels = 
@@ -1140,6 +1157,8 @@ mp <- barplot(non_func$perc, names.arg = non_func$region_code,
           c(0, 1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
 )
+# add a line indicating overall non-functional percentage
+abline(h = n_func[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, non_func$perc, labels = 
@@ -1200,13 +1219,9 @@ mp <- barplot(funcw$perc, names.arg = funcw$construction_year,
           'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
 )
+# add a line indicating overall functional percentage
+abline(h = functional[[1]], lty = 2, lwd = 1.5, col = "blue")
         
-# write the percentage values above the individual bars in the plot
-#text(mp, funcw$perc, labels = 
-#       format(round(funcw$perc, 3), 4),
-#        pos = 3, cex = .75)
-
-
 # now subset for functional needs repair wells only
 func_nr <- subset(c_const_y_status, label == "functional needs repair")
 
@@ -1216,11 +1231,8 @@ mp <- barplot(func_nr$perc, names.arg = func_nr$construction_year,
           c(0,0.5), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
 )
-        
-# write the percentage values above the individual bars in the plot
-#text(mp, func_nr$perc, labels = 
-#       format(round(func_nr$perc, 3), 4),
-#        pos = 3, cex = .75)
+# add a line indicating overall func needs repair percentage
+abline(h = func_n_rep[[1]], lty = 2, lwd = 1.5, col = "red")
 
 
 # now subset for non functional wells only
@@ -1232,11 +1244,9 @@ mp <- barplot(non_func$perc, names.arg = non_func$construction_year,
           c(0, 1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
 )
+# add a line indicating overall non-functional percentage
+abline(h = n_func[[1]], lty = 2, lwd = 1.5, col = "red")
         
-# write the percentage values above the individual bars in the plot
-#text(mp, non_func$perc, labels = 
-#       format(round(non_func$perc, 3), 4),
-#        pos = 3, cex = .75)
 ```
 
 As with the __amount_tsh__, __gps_height__, and __population__ variables, we find a significant amount of clustering relative to the subvillage, ward, lga, district_code, and region geographic variables, as shown in the table below.
@@ -1395,6 +1405,8 @@ mp <- barplot(funcw$perc, names.arg = funcw$district_code,
           'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
 )
+# add a line indicating overall functional percentage
+abline(h = functional[[1]], lty = 2, lwd = 1.5, col = "blue")
         
 # write the percentage values above the individual bars in the plot
 text(mp, funcw$perc, labels = 
@@ -1411,7 +1423,9 @@ mp <- barplot(func_nr$perc, names.arg = func_nr$district_code,
           c(0,0.5), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
 )
-        
+# add a line indicating overall func needs repair percentage
+abline(h = func_n_rep[[1]], lty = 2, lwd = 1.5, col = "red")
+       
 # write the percentage values above the individual bars in the plot
 text(mp, func_nr$perc, labels = 
        format(round(func_nr$perc, 3), 4),
@@ -1427,6 +1441,8 @@ mp <- barplot(non_func$perc, names.arg = non_func$district_code,
           c(0, 1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
 )
+# add a line indicating overall non-functional percentage
+abline(h = n_func[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, non_func$perc, labels = 
@@ -1488,6 +1504,10 @@ mp <- barplot(funcw$perc, names.arg = funcw$public_meeting,
           'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
 )
+# add a line indicating overall functional percentage
+abline(h = functional[[1]], lty = 2, lwd = 1.5, col = "blue")
+
+# text(x = 2, y = .9, labels = "0verall = ---", cex = 1)
         
 # write the percentage values above the individual bars in the plot
 text(mp, funcw$perc, labels = 
@@ -1504,7 +1524,9 @@ mp <- barplot(func_nr$perc, names.arg = func_nr$public_meeting,
           c(0,0.5), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
 )
-        
+# add a line indicating overall func needs repair percentage
+abline(h = func_n_rep[[1]], lty = 2, lwd = 1.5, col = "red")
+
 # write the percentage values above the individual bars in the plot
 text(mp, func_nr$perc, labels = 
        format(round(func_nr$perc, 3), 4),
@@ -1520,6 +1542,8 @@ mp <- barplot(non_func$perc, names.arg = non_func$public_meeting,
           c(0, 1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
 )
+# add a line indicating overall non-functional percentage
+abline(h = n_func[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, non_func$perc, labels = 
@@ -1699,7 +1723,9 @@ mp <- barplot(funcw$perc, names.arg = funcw$scheme_management,
           'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
 )
-        
+# add a line indicating overall functional percentage
+abline(h = functional[[1]], lty = 2, lwd = 1.5, col = "blue")
+
 # write the percentage values above the individual bars in the plot
 text(mp, funcw$perc, labels = 
        format(round(funcw$perc, 3), 4),
@@ -1715,6 +1741,8 @@ mp <- barplot(func_nr$perc, names.arg = func_nr$scheme_management,
           c(0,0.5), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
 )
+# add a line indicating overall func needs repair percentage
+abline(h = func_n_rep[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, func_nr$perc, labels = 
@@ -1731,12 +1759,99 @@ mp <- barplot(non_func$perc, names.arg = non_func$scheme_management,
           c(0, 1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
 )
+# add a line indicating overall non-functional percentage
+abline(h = n_func[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, non_func$perc, labels = 
        format(round(non_func$perc, 3), 4),
         pos = 3, cex = .75)
 ```
+
+Analysis of the __scheme_management__ variable's missing values reveals the following:
+
+1. There is no single management scheme that is universally applicable to any given extraction_type or waterpoint_type or for any of the composites thereof (e.g., extraction_type_group, etc.)
+
+2. Instances of missing __scheme_management__ values are not correlated in any way with missing __public_meeting__ or __permit__ values, despite the fact that the missing value counts for each of those variables are somewhat similar.
+
+3. Aggregating by geographic variables also fails to produce a even single valid __scheme_management__ value for many __subvillages__ and most __wards__. At the __lga__ and __region__ levels we can generally find at least several valid values per __lga__ or __region__, though some __lga__'s contain only a single valid value.
+
+4. Aggregating at the __ward__ level shows that 75 wards lack any valid __scheme_management__ value, and those 75 wards cover 1,413  of the 3,877 (36.4%) of the missing scheme_management values.
+
+5. At the __lga__ level it appears as though nearly every lga has at least one valid scheme_management value. However, in some lga's the number of unknowns is an order of magnitude greater than the number of known values. For example, in the __lga__ of Kahama there are 736 wells having an unknown __scheme_management__ value and only 100 wells with known values that a spread across several distinct __scheme_management__ categories.
+
+One possible approach to dealing with the missing values would assign the most frequently occurring valid __scheme_management__ value found with the corresponding __ward__ or __lga__ as the imputed value. However, that approach seems inappropriate since many wards and lga's are dominated by unknown values: in such instances the most frequently occurring valid value will likely represent a relatively small percentage of the total number of data records for a __ward__ or __lga__, and assigning that value to a missing __scheme_management__ record would likely introduce far too much inappropriate statistical bias within the data set. As such, it may be preferable to simply mark the missing values as "unknown" to prevent the introduction of such bias.
+
+```{r, echo = FALSE, eval = FALSE}
+# c_ward contains the total number of wells by ward
+scheme_m_tmp <- tanz[, c("id", "ward", "lga", "region", "scheme_management", "extraction_type")]
+
+# fill in NA's so data can be grouped properly
+scheme_m_tmp$scheme_management[is.na(scheme_m_tmp$scheme_management)] <- "unknown"
+
+# aggregate the data
+scheme_ward_sum <- arrange(summarise(group_by(scheme_m_tmp, ward, scheme_management), 
+                               TotalWells = length(unique(id)),
+                               SchemeUnk = sum(scheme_management == "unknown") ))
+
+# get unique ward names
+scheme_ward <- data.frame(unique(scheme_ward_sum$ward))
+colnames(scheme_ward) <- c("ward")
+
+# add a new column for the max managment scheme
+scheme_ward$max_ms <- NA
+
+# now find max scheme_managent value for ward
+for (i in 1:nrow(scheme_ward)) {
+  tmp <- arrange(subset(scheme_ward_sum, ward == scheme_ward$ward[i]), desc(TotalWells))
+  
+  if (tmp$scheme_management[1] != "unknown") {
+    
+     scheme_ward$max_ms[i] <- tmp$scheme_management[1]
+  } else if (nrow(tmp) > 1) {
+    scheme_ward$max_ms[i] <- tmp$scheme_management[2]
+    
+  } else {
+    scheme_ward$max_ms[i] <- "unknown"
+  }
+    
+} # for i
+
+# check count of unknowns = 75 => 75 wards have no known management scheme
+sum(scheme_ward$max_ms == "unknown")
+
+# subset to get list of wards having no valid management_scheme value
+w_nms <- subset(scheme_ward, max_ms == "unknown")
+
+# subset orig data by w_nms wards
+t_wnms <- tanz[which(tanz$ward %in% w_nms$ward),]
+
+# get count of records containing those wards = 1413
+length(unique(t_wnms$ward))
+
+# memory cleanup
+rm(w_nms, t_wnms)
+```
+
+
+```{r, echo = FALSE, eval = FALSE}
+# --------------------------
+
+scheme_lga_sum <- arrange(summarise(group_by(scheme_m_tmp, lga, scheme_management), 
+                               TotalWells = length(unique(id)),
+                               SchemeUnk = sum(scheme_management == "unknown")
+                              #  ), desc(TotalWells) )
+))
+
+scheme_reg_sum <- arrange(summarise(group_by(scheme_m_tmp, region, scheme_management), 
+                               TotalWells = length(unique(id)),
+                               SchemeUnk = sum(scheme_management == "unknown")
+                              #  ), desc(TotalWells) )
+))
+
+```
+
+
 
 
 ### Scheme_name
@@ -1809,6 +1924,8 @@ mp <- barplot(funcw$perc, names.arg = funcw$permit,
           'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
 )
+# add a line indicating overall functional percentage
+abline(h = functional[[1]], lty = 2, lwd = 1.5, col = "blue")
         
 # write the percentage values above the individual bars in the plot
 text(mp, funcw$perc, labels = 
@@ -1825,6 +1942,8 @@ mp <- barplot(func_nr$perc, names.arg = func_nr$permit,
           c(0,0.5), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
 )
+# add a line indicating overall func needs repair percentage
+abline(h = func_n_rep[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, func_nr$perc, labels = 
@@ -1841,6 +1960,8 @@ mp <- barplot(non_func$perc, names.arg = non_func$permit,
           c(0, 1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
 )
+# add a line indicating overall non-functional percentage
+abline(h = n_func[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, non_func$perc, labels = 
@@ -2021,6 +2142,8 @@ mp <- barplot(funcw$perc, names.arg = funcw$extraction_type,
           'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
 )
+# add a line indicating overall functional percentage
+abline(h = functional[[1]], lty = 2, lwd = 1.5, col = "blue")
         
 # write the percentage values above the individual bars in the plot
 text(mp, funcw$perc, labels = 
@@ -2037,6 +2160,8 @@ mp <- barplot(func_nr$perc, names.arg = func_nr$extraction_type,
           c(0,0.5), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
 )
+# add a line indicating overall func needs repair percentage
+abline(h = func_n_rep[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, func_nr$perc, labels = 
@@ -2053,6 +2178,8 @@ mp <- barplot(non_func$perc, names.arg = non_func$extraction_type,
           c(0, 1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
 )
+# add a line indicating overall non-functional percentage
+abline(h = n_func[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, non_func$perc, labels = 
@@ -2110,6 +2237,8 @@ mp <- barplot(funcw$perc, names.arg = funcw$extraction_type_group,
           'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
 )
+# add a line indicating overall functional percentage
+abline(h = functional[[1]], lty = 2, lwd = 1.5, col = "blue")
         
 # write the percentage values above the individual bars in the plot
 text(mp, funcw$perc, labels = 
@@ -2126,6 +2255,8 @@ mp <- barplot(func_nr$perc, names.arg = func_nr$extraction_type_group,
           c(0,0.5), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
 )
+# add a line indicating overall func needs repair percentage
+abline(h = func_n_rep[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, func_nr$perc, labels = 
@@ -2142,6 +2273,8 @@ mp <- barplot(non_func$perc, names.arg = non_func$extraction_type_group,
           c(0, 1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
 )
+# add a line indicating overall non-functional percentage
+abline(h = n_func[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, non_func$perc, labels = 
@@ -2199,6 +2332,8 @@ mp <- barplot(funcw$perc, names.arg = funcw$extraction_type_class,
           'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
 )
+# add a line indicating overall functional percentage
+abline(h = functional[[1]], lty = 2, lwd = 1.5, col = "blue")
         
 # write the percentage values above the individual bars in the plot
 text(mp, funcw$perc, labels = 
@@ -2215,6 +2350,8 @@ mp <- barplot(func_nr$perc, names.arg = func_nr$extraction_type_class,
           c(0,0.5), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
 )
+# add a line indicating overall func needs repair percentage
+abline(h = func_n_rep[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, func_nr$perc, labels = 
@@ -2231,6 +2368,8 @@ mp <- barplot(non_func$perc, names.arg = non_func$extraction_type_class,
           c(0, 1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75
 )
+# add a line indicating overall non-functional percentage
+abline(h = n_func[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, non_func$perc, labels = 
@@ -2288,6 +2427,8 @@ mp <- barplot(funcw$perc, names.arg = funcw$management,
           'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 
 )
+# add a line indicating overall functional percentage
+abline(h = functional[[1]], lty = 2, lwd = 1.5, col = "blue")
         
 # write the percentage values above the individual bars in the plot
 text(mp, funcw$perc, labels = 
@@ -2304,6 +2445,8 @@ mp <- barplot(func_nr$perc, names.arg = func_nr$management,
           c(0,0.5), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
 )
+# add a line indicating overall func needs repair percentage
+abline(h = func_n_rep[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, func_nr$perc, labels = 
@@ -2320,6 +2463,8 @@ mp <- barplot(non_func$perc, names.arg = non_func$management,
           c(0, 1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
 )
+# add a line indicating overall non-functional percentage
+abline(h = n_func[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, non_func$perc, labels = 
@@ -2377,6 +2522,8 @@ mp <- barplot(funcw$perc, names.arg = funcw$management_group,
           'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 
 )
+# add a line indicating overall functional percentage
+abline(h = functional[[1]], lty = 2, lwd = 1.5, col = "blue")
         
 # write the percentage values above the individual bars in the plot
 text(mp, funcw$perc, labels = 
@@ -2393,6 +2540,8 @@ mp <- barplot(func_nr$perc, names.arg = func_nr$management_group,
           c(0,0.5), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
 )
+# add a line indicating overall func needs repair percentage
+abline(h = func_n_rep[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, func_nr$perc, labels = 
@@ -2409,6 +2558,8 @@ mp <- barplot(non_func$perc, names.arg = non_func$management_group,
           c(0, 1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
 )
+# add a line indicating overall non-functional percentage
+abline(h = n_func[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, non_func$perc, labels = 
@@ -2466,6 +2617,8 @@ mp <- barplot(funcw$perc, names.arg = funcw$payment,
           'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 
 )
+# add a line indicating overall functional percentage
+abline(h = functional[[1]], lty = 2, lwd = 1.5, col = "blue")
         
 # write the percentage values above the individual bars in the plot
 text(mp, funcw$perc, labels = 
@@ -2482,6 +2635,8 @@ mp <- barplot(func_nr$perc, names.arg = func_nr$payment,
           c(0,1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
 )
+# add a line indicating overall func needs repair percentage
+abline(h = func_n_rep[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, func_nr$perc, labels = 
@@ -2498,6 +2653,8 @@ mp <- barplot(non_func$perc, names.arg = non_func$payment,
           c(0, 1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
 )
+# add a line indicating overall non-functional percentage
+abline(h = n_func[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, non_func$perc, labels = 
@@ -2555,6 +2712,8 @@ mp <- barplot(funcw$perc, names.arg = funcw$payment_type,
           'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 
 )
+# add a line indicating overall functional percentage
+abline(h = functional[[1]], lty = 2, lwd = 1.5, col = "blue")
         
 # write the percentage values above the individual bars in the plot
 text(mp, funcw$perc, labels = 
@@ -2571,6 +2730,8 @@ mp <- barplot(func_nr$perc, names.arg = func_nr$payment_type,
           c(0,1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
 )
+# add a line indicating overall func needs repair percentage
+abline(h = func_n_rep[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, func_nr$perc, labels = 
@@ -2587,6 +2748,8 @@ mp <- barplot(non_func$perc, names.arg = non_func$payment_type,
           c(0, 1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
 )
+# add a line indicating overall non-functional percentage
+abline(h = n_func[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, non_func$perc, labels = 
@@ -2644,6 +2807,8 @@ mp <- barplot(funcw$perc, names.arg = funcw$water_quality,
           'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 
 )
+# add a line indicating overall functional percentage
+abline(h = functional[[1]], lty = 2, lwd = 1.5, col = "blue")
         
 # write the percentage values above the individual bars in the plot
 text(mp, funcw$perc, labels = 
@@ -2660,6 +2825,8 @@ mp <- barplot(func_nr$perc, names.arg = func_nr$water_quality,
           c(0,1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
 )
+# add a line indicating overall func needs repair percentage
+abline(h = func_n_rep[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, func_nr$perc, labels = 
@@ -2676,6 +2843,8 @@ mp <- barplot(non_func$perc, names.arg = non_func$water_quality,
           c(0, 1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
 )
+# add a line indicating overall non-functional percentage
+abline(h = n_func[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, non_func$perc, labels = 
@@ -2733,6 +2902,8 @@ mp <- barplot(funcw$perc, names.arg = funcw$quality_group,
           'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 
 )
+# add a line indicating overall functional percentage
+abline(h = functional[[1]], lty = 2, lwd = 1.5, col = "blue")
         
 # write the percentage values above the individual bars in the plot
 text(mp, funcw$perc, labels = 
@@ -2749,6 +2920,8 @@ mp <- barplot(func_nr$perc, names.arg = func_nr$quality_group,
           c(0,1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
 )
+# add a line indicating overall func needs repair percentage
+abline(h = func_n_rep[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, func_nr$perc, labels = 
@@ -2765,6 +2938,8 @@ mp <- barplot(non_func$perc, names.arg = non_func$quality_group,
           c(0, 1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
 )
+# add a line indicating overall non-functional percentage
+abline(h = n_func[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, non_func$perc, labels = 
@@ -2833,6 +3008,8 @@ mp <- barplot(funcw$perc, names.arg = funcw$quantity,
           'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 
 )
+# add a line indicating overall functional percentage
+abline(h = functional[[1]], lty = 2, lwd = 1.5, col = "blue")
         
 # write the percentage values above the individual bars in the plot
 text(mp, funcw$perc, labels = 
@@ -2849,6 +3026,8 @@ mp <- barplot(func_nr$perc, names.arg = func_nr$quantity,
           c(0,1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
 )
+# add a line indicating overall func needs repair percentage
+abline(h = func_n_rep[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, func_nr$perc, labels = 
@@ -2865,6 +3044,8 @@ mp <- barplot(non_func$perc, names.arg = non_func$quantity,
           c(0, 1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
 )
+# add a line indicating overall non-functional percentage
+abline(h = n_func[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, non_func$perc, labels = 
@@ -2922,6 +3103,8 @@ mp <- barplot(funcw$perc, names.arg = funcw$source,
           'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 
 )
+# add a line indicating overall functional percentage
+abline(h = functional[[1]], lty = 2, lwd = 1.5, col = "blue")
         
 # write the percentage values above the individual bars in the plot
 text(mp, funcw$perc, labels = 
@@ -2938,6 +3121,8 @@ mp <- barplot(func_nr$perc, names.arg = func_nr$source,
           c(0,1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
 )
+# add a line indicating overall func needs repair percentage
+abline(h = func_n_rep[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, func_nr$perc, labels = 
@@ -2954,6 +3139,8 @@ mp <- barplot(non_func$perc, names.arg = non_func$source,
           c(0, 1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
 )
+# add a line indicating overall non-functional percentage
+abline(h = n_func[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, non_func$perc, labels = 
@@ -3013,6 +3200,8 @@ mp <- barplot(funcw$perc, names.arg = funcw$source_type,
           'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 
 )
+# add a line indicating overall functional percentage
+abline(h = functional[[1]], lty = 2, lwd = 1.5, col = "blue")
         
 # write the percentage values above the individual bars in the plot
 text(mp, funcw$perc, labels = 
@@ -3029,6 +3218,8 @@ mp <- barplot(func_nr$perc, names.arg = func_nr$source_type,
           c(0,1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
 )
+# add a line indicating overall func needs repair percentage
+abline(h = func_n_rep[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, func_nr$perc, labels = 
@@ -3045,6 +3236,8 @@ mp <- barplot(non_func$perc, names.arg = non_func$source_type,
           c(0, 1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
 )
+# add a line indicating overall non-functional percentage
+abline(h = n_func[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, non_func$perc, labels = 
@@ -3102,6 +3295,8 @@ mp <- barplot(funcw$perc, names.arg = funcw$source_class,
         col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 
 )
+# add a line indicating overall functional percentage
+abline(h = functional[[1]], lty = 2, lwd = 1.5, col = "blue")
         
 # write the percentage values above the individual bars in the plot
 text(mp, funcw$perc, labels = 
@@ -3118,6 +3313,8 @@ mp <- barplot(func_nr$perc, names.arg = func_nr$source_class,
           c(0,1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
 )
+# add a line indicating overall func needs repair percentage
+abline(h = func_n_rep[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, func_nr$perc, labels = 
@@ -3134,6 +3331,8 @@ mp <- barplot(non_func$perc, names.arg = non_func$source_class,
           c(0, 1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70
 )
+# add a line indicating overall non-functional percentage
+abline(h = n_func[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, non_func$perc, labels = 
@@ -3191,6 +3390,8 @@ mp <- barplot(funcw$perc, names.arg =
         main = ('Percentage of Wells Functioning: Waterpoint_Type'), ylim = c(0, 1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
 )
+# add a line indicating overall functional percentage
+abline(h = functional[[1]], lty = 2, lwd = 1.5, col = "blue")
         
 # write the percentage values above the individual bars in the plot
 text(mp, funcw$perc, labels = 
@@ -3207,6 +3408,8 @@ mp <- barplot(func_nr$perc, names.arg =
         main = ('Percentage of Wells Functional Needs Repair: Waterpoint_Type'), ylim = c(0, 1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
 )
+# add a line indicating overall func needs repair percentage
+abline(h = func_n_rep[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, func_nr$perc, labels = 
@@ -3223,6 +3426,8 @@ mp <- barplot(non_func$perc, names.arg =
         main = ('Percentage of Wells Non Functional: Waterpoint_Type'), ylim = c(0, 1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
 )
+# add a line indicating overall non-functional percentage
+abline(h = n_func[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, non_func$perc, labels = 
@@ -3280,6 +3485,8 @@ mp <- barplot(funcw$perc, names.arg =
         main = ('Percentage of Wells Functioning: Waterpoint_Type_Group'), ylim = c(0, 1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
 )
+# add a line indicating overall functional percentage
+abline(h = functional[[1]], lty = 2, lwd = 1.5, col = "blue")
         
 # write the percentage values above the individual bars in the plot
 text(mp, funcw$perc, labels = 
@@ -3296,6 +3503,8 @@ mp <- barplot(func_nr$perc, names.arg =
         main = ('Percentage of Wells Functional Needs Repair: Waterpoint_Type_Group'), ylim = c(0, 1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
 )
+# add a line indicating overall func needs repair percentage
+abline(h = func_n_rep[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, func_nr$perc, labels = 
@@ -3312,6 +3521,8 @@ mp <- barplot(non_func$perc, names.arg =
         main = ('Percentage of Wells Non Functional: Waterpoint_Type_Group'), ylim = c(0, 1), col = 'yellow', las = 2,
         cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.75 
 )
+# add a line indicating overall non-functional percentage
+abline(h = n_func[[1]], lty = 2, lwd = 1.5, col = "red")
         
 # write the percentage values above the individual bars in the plot
 text(mp, non_func$perc, labels = 
@@ -3597,17 +3808,28 @@ df["latitude_new"] = latitude
 
 ### Data Prep: Funder
 
+(Need binning explanation for Sekhar's approach)
+
 Due to high coincidence w/ __installer__ NA's, fill __funder__ NA's with "unknown".
 
 
 ### Data Prep: Installer
+
+(Need binning explanation for Sekhar's approach)
 
 Due to high coincidence w/ __funder__ NA's, fill __installer__ NA's with "unknown".
 
 
 ### Data Prep: Subvillage
 
-371 NA's. Probably best to fill with "unknown"
+The __subvillage__ variable contains a relatively small number (371) of missing values. With 19,288 distinct known values/categories, the variable is also by far the most diverse categorical variable within the data set. Some __subvillage__ values appear to be duplicative of a data record's __ward__ variable (e.g., "Madukani") while others are merely a number or alphabetical letter. Given these characteristics, it seems unlikely that a stastically valid imputation scheme can be applied to the missing __subvillage__ values. Therefore, we will simply assign a value of "unknown" to the missing data values found within the variable. This approach is implemented in the __R__ code shown below. Please note that no new variable is created since imputed values are not being applied to the missing data values.
+
+```{r, eval = FALSE}
+# assign "unknown" to NA's. No need to create a new variable
+
+# put imputed vals into orig data
+tanz$subvillage[is.na(tanz$subvillage)] <- "unknown"
+```
 
 
 ### Data Prep: Public Meeting
@@ -3669,13 +3891,26 @@ rm(pmeet_sub, ward_meet_true, lga_meet_true)
 
 ### Data Prep: Scheme Management
 
-3877 NA's. Can be filled either with "unknown" or via multinomial logistic regression model. No other obvious method of imputing based on variables at hand.
+Data exploration work showed that imputation for missing __scheme_management__ values was unlikely to be effective. Therefore, we will simply a value of "unknown" to the missing data values found within the variable. This approach is implemented in the __R__ code shown below. Please note that no new variable is created since imputed values are not being applied to the missing data values.
+
+```{r, eval = FALSE}
+# assign "unknown" to NA's. No need to create a new variable
+
+# put imputed vals into orig data
+tanz$scheme_management[is.na(tanz$scheme_management)] <- "unknown"
+```
 
 
 ### Data Prep: scheme_name
 
-28166 NA's. Too many to impute due to 2700 possible scheme names. Variable is unlikely to have much predictive value anyway due to high number of possible categorical values.
+With 2700 identifiable distinct values and 28,166 of the 54,900 records having missing values for the variable, __scheme_name__ appears to be a poor candidate for an effective and statistically valid imputation approach. There appears to be no clear relationship between the known __scheme_name__ values and other variable's values, and the scheme names themselves seem likely to have been assigned/constructed without the use of an overriding common set of naming guidelines. Therefore, we will simply a value of "unknown" to the missing data values found within the variable. This approach is implemented in the __R__ code shown below. Please note that no new variable is created since imputed values are not being applied to the missing data values.
 
+```{r, eval = FALSE}
+# assign "unknown" to NA's. No need to create a new variable
+
+# put imputed vals into orig data
+tanz$scheme_name[is.na(tanz$scheme_name)] <- "unknown"
+```
 
 
 ### Data Prep: Permit

@@ -4106,6 +4106,28 @@ tanz$pump_age[tanz$pump_age < 1] <- 1
 # tmp <- tanz[tanz$pump_age < 0,]
 ```
 
+## Create Training + Evaluation Subsets
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, eval = FALSE}
+
+# library(dplyr)
+
+# create EVALUATION data set: sample 20000 rows at random from master file
+set.seed(123)
+eval.d <- tanz[sample(nrow(tanz), 20000), ]
+
+eval.d <- arrange(eval.d, id)
+
+# create TRAINING data set: remove all eval.d observations from master data set
+training.d <- tanz[-eval.d$id, ]
+
+# now write both files to disc
+write.csv(eval.d, file = "C:/data/698/FP-EVAL-DATASET.csv", row.names = FALSE)
+write.csv(training.d, file = "C:/data/698/FP-TRAINING-DATASET.csv", row.names = FALSE)
+
+# rm(list = ls())
+```
+
 
 # References
 

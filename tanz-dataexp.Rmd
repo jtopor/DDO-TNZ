@@ -326,13 +326,13 @@ rm(gp, gp_p, gp2, gp2_p, gp3, gp3_p, gp4, gp4_4, gp5, gp5_p, gp6, gp6_p)
 rm(svill_no_alt, ward_no_alt, dc_no_alt, region_no_alt, basin_no_alt)
 ````
 
-| Geographic Var.    | Num of categories w No gps_h Value |
-|--------------------|------------------------------------|
-| subvillage         | 13357 / 19288 (69.2%)              |
-| ward               | 1090 / 2092 (52.1%)                |
-| lga                | 40 / 125 (32%)                     |
-| district_code      | 2 / 20 (10%)                       |
-| region             | 4 / 21 (19%)                       |
+| Geographic Var.    | Num of categories w No amount_tsh Value |
+|--------------------|-----------------------------------------|
+| subvillage         | 13357 / 19288 (69.2%)                   |
+| ward               | 1090 / 2092 (52.1%)                     |
+| lga                | 40 / 125 (32%)                          |
+| district_code      | 2 / 20 (10%)                            |
+| region             | 4 / 21 (19%)                            |
 
 As shown in the table, more than two-thirds of subvillages and one-half wards represented within the data set have no non-zero __amount_tsh__ values, as do 32% of lga's, 10% of district_codes and 19% of regions. Such clustering might suggest a systemic data collection issue within those geographic areas, e.g., perhaps the wells located within those areas were not actually visited by the surveying company that compiled the data. Alternatively, the total static head for many wells may simply not be known if it was not recorded when the pump was originally installed. 
 

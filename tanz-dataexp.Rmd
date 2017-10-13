@@ -126,7 +126,53 @@ The plot above provides a benchmark of sorts for purposes of evaluating each of 
 
 ## Summary of Variables in Data Set
 
-The data set is comprised of a total of 40 variables, six of which are numeric, 31 of which are categorical, and three of which are strictly for administrative/reference purposes. Each class of variable is summarized in the tables shown below.
+The data set is comprised of a total of 40 variables, six of which are numeric, 31 of which are categorical, and three of which are strictly for administrative/reference purposes. The following is a brief summary of each of the independent variables found within the data set.
+
+Variable                | Type | Definition                
+-------------------------------| ------------------------------------------------------------------
+`id`                    | num  | Identification Variable (not a predictor)   
+`date_recorded`         | date | Date of data collection by survey company
+`recorded_by`           | char | Name of the data collection / survey company
+`amount_tsh      `      | num  | Metric indicating total static head for pump; should be > 0
+`gps_height`            | num  | Altitude of pump
+`population`            | num  | Human population in immediate vicinty of pump
+`longitude`             | num  | Longitudinal coordinate of pump
+`latitude`              | num  | Latitudinal coordinate of pump
+`num_private`           | num  | No definition is available for this variable
+`funder`                | char | Name of organization that funded installation of pump
+`installer`             | char | Name of organization that installed the pump
+`wpt_name`              | char | Name assigned to given waterpoint
+`basin`                 | char | Name of geographic water basin where pump is located
+`subvillage`            | char | Name of geographic subvillage where pump is located
+`region`                | char | Name of geographic region in Tanzania where pump is located
+`region_code`           | num  | Numeric ID for 'region' variable
+`district_code`         | num  | Numeric ID of district within a region where pump is located
+`lga`                   | char | Tanzania-specific geographic indicator of where pump is located
+`ward`                  | char | Name of Tanzanian geographic ward where pump is located
+`public_meeting`        | char | True/False indicator
+`scheme_management`     | char | Type of the organization responsible for management of pump
+`scheme_name`           | char | Name of organization responsible for management of pump
+`permit`                | char | True/False indicating whether the pump has valid permit
+`construction_year`     | num  | The year the pump was installed
+`extraction_type`       | char | Method of extraction used at a given pump site
+`extraction_type_group` | char | Aggregation of extraction_type categories
+`extraction_type_class` | char | Aggregation of extraction_type_group categories
+`management`            | char | Name of method employed for management of a given pump
+`management_group`      | char | Possibly an aggregation of management categories
+`payment`               | char | Categorical indicator of payment method required of pump users
+`payment_type`          | char | Appears to be a duplicate of payment categories
+`water_quality`         | char | Categorical indicator of water quality produced by pump
+`quality_group`         | char | Aggregation of water_quality categories
+`quantity`              | char | Categorical indicator of water quantity produced by pump
+`quantity_group`        | char | Aggregation of quantity categories
+`source`                | char | Type of source of the water for a given pump
+`source_type`           | char | Aggregation of source categories
+`source_type_class`     | char | Aggregation of source_type categories
+`waterpoint_type`       | char | The type of pump installed at a well site
+`waterpoint_type_group` | char | Aggregation of waterpoint_type categories
+
+
+Each of these variables can be characterized as belonging to one of three classes of independent variables: non-categorical numeric variables; categorical variables; and administrative variables. The tables below summarize our analyses of missing and possibly invalid values for each variable.
 
 ### Numeric Variables
 
@@ -151,7 +197,7 @@ The data set is comprised of a total of 40 variables, six of which are numeric, 
 | subvillage           | 19288           | 371  |                               |
 | region               | 21              | 0    |                               |
 | region_code          | 27              | 0    |                               |
-| district_code        | 20              | 0    |                               |
+| district_code        | 20              | 0    | Not unique across regions     |
 | lga                  | 125             | 0    |                               |
 | ward                 | 2092            | 0    |                               |
 | public_meeting       | 3               | 3334 | binary + NA's                 |
@@ -172,7 +218,7 @@ The data set is comprised of a total of 40 variables, six of which are numeric, 
 | quantity_group       | 5               | 0    | dupe of quantity              |
 | source               | 10              | 0    |                               |
 | source_type          | 7               | 0    | composite of source           |
-| source_class         | 3               | 0    | binary + "unknow              |
+| source_class         | 3               | 0    | binary + "unknown"            |
 | waterpoint_type      | 7               | 0    |                               |
 | waterpoint_type_group| 6               | 0    | composite of waterpoint_type  |
 
@@ -1450,6 +1496,21 @@ text(mp, non_func$perc, labels =
         pos = 3, cex = .75)
 ```
 
+Further analysis reveals that values of the __district_code__ variable are not unique across __regions__, as can be seen in the table below where district_code values are aggregated by region. In fact, we find a total of 132 __region__ / __district_code__ combinations within the data set
+
+```{r}
+# aggregate district_code values by region
+c_reg_dist <- arrange(summarise(group_by(tanz, region, district_code), 
+                     TotalWells = length(unique(id)) ) )
+
+head(c_reg_dist, n = 20)
+
+# count number of distinct region / district_code pairs
+nrow(c_reg_dist)
+```
+
+This dependence on the __region__ variable indicates that the __district_code__ variable itself is unlikely to serve as a valid predictor of a well's status. As such, the variable appears unlikely to be useful for predictive modeling purposes.
+
 
 ### Public Meeting
 
@@ -1671,7 +1732,7 @@ head(c_ward, n = 20)
 
 ### Scheme Management
 
-The __scheme_management__ variable represents the type of the party responsible for managing a given well.  The summary statistics shown below indicate a total of 13 distinct scheme management values within the data set, with 3,877 records having no valid value. The number of well installations per type of scheme management is summarized in the table below.
+The __scheme_management__ variable represents the type of organization responsible for managing a given well.  The summary statistics shown below indicate a total of 13 distinct scheme management values within the data set, with 3,877 records having no valid value. The number of well installations per type of scheme management is summarized in the table below.
 
 ```{r}
 # count distinct scheme_management = 13, 3877 NA's
@@ -3532,7 +3593,22 @@ text(mp, non_func$perc, labels =
 
 # Data Preparation
 
-A brief description of how missing data values will be imputed where feasible
+More than 53% of the records in the data set contain either missing or invalid data values. Our data exploration efforts allowed us to uncover relationships between various independent variables that could serve as the basis of statistically valid imputation algorithms for the missing values of the `amount_tsh`, `gps_height`, `construction_year`, `latitude`, `longitude`, `public_meeting`, and `permit` variables. A summary of the various imputation algorithms is provided in the table below.
+
+| Variable Name(s)     | Imputation Method                                                 |
+|----------------------|-------------------------------------------------------------------|
+| amount_tsh           | Median non-zero amount_tsh of corresponding extraction_type_group |
+| gps_height           | Linear regression model using latitude + longitude as indep. vars |
+| population           | Impute using the median non-zero population value                 |
+| latitude & longitude | Mean latitude and longitude values from most granular geographic  |
+| (-)                  | indicator having non-zero latitude and longitude values           |
+| construction_year    | Median non-zero construction_year of corresponding basin          |
+| (-)                  | or extraction_type, whichever is smaller                          |
+| public_meeting       | If % TRUE public_meeting values in ward (or lga if no valid       |
+| (-)                  | values found in ward) > 50%, assign TRUE, else FALSE              |
+| permit               | If % TRUE permit values in ward (or lga or region if no valid     |
+| (-)                  | valid values found in ward or lga) > 50%, assign TRUE, else FALSE |
+
 
 ## Data Prep: Numeric Variables
 
@@ -4108,7 +4184,7 @@ tanz$pump_age[tanz$pump_age < 1] <- 1
 
 ## Create Training + Evaluation Subsets
 
-```{r, message = FALSE, warning = FALSE, echo = FALSE, eval = FALSE}
+```{r, message = FALSE, warning = FALSE, eval = FALSE}
 
 # library(dplyr)
 

@@ -24,6 +24,9 @@ library(dplyr)
 library(lubridate) # used to extract year from date_recorded
 library(nnet) # for multinom logistic regression
 library(class) # for KNN
+
+# disable scientific notation
+options(scipen = 999)
 ```
 
 
@@ -75,7 +78,7 @@ na.cases / nrow(tanz)
 tanz[,][tanz[,] == ""] <- NA
 
 # count NA's in each column
-kable(colSums(is.na(tanz)), col.names = c("NA Count") )
+# kable(colSums(is.na(tanz)), col.names = c("NA Count") )
 
 # recount number of rows with no NA's = 27813
 (c.cases <- sum(complete.cases(tanz)) )
@@ -128,48 +131,48 @@ The plot above provides a benchmark of sorts for purposes of evaluating each of 
 
 The data set is comprised of a total of 40 variables, six of which are numeric, 31 of which are categorical, and three of which are strictly for administrative/reference purposes. The following is a brief summary of each of the independent variables found within the data set.
 
-Variable                | Type | Definition                
--------------------------------| ------------------------------------------------------------------
-`id`                    | num  | Identification Variable (not a predictor)   
-`date_recorded`         | date | Date of data collection by survey company
-`recorded_by`           | char | Name of the data collection / survey company
-`amount_tsh      `      | num  | Metric indicating total static head for pump; should be > 0
-`gps_height`            | num  | Altitude of pump
-`population`            | num  | Human population in immediate vicinty of pump
-`longitude`             | num  | Longitudinal coordinate of pump
-`latitude`              | num  | Latitudinal coordinate of pump
-`num_private`           | num  | No definition is available for this variable
-`funder`                | char | Name of organization that funded installation of pump
-`installer`             | char | Name of organization that installed the pump
-`wpt_name`              | char | Name assigned to given waterpoint
-`basin`                 | char | Name of geographic water basin where pump is located
-`subvillage`            | char | Name of geographic subvillage where pump is located
-`region`                | char | Name of geographic region in Tanzania where pump is located
-`region_code`           | num  | Numeric ID for 'region' variable
-`district_code`         | num  | Numeric ID of district within a region where pump is located
-`lga`                   | char | Tanzania-specific geographic indicator of where pump is located
-`ward`                  | char | Name of Tanzanian geographic ward where pump is located
-`public_meeting`        | char | True/False indicator
-`scheme_management`     | char | Type of the organization responsible for management of pump
-`scheme_name`           | char | Name of organization responsible for management of pump
-`permit`                | char | True/False indicating whether the pump has valid permit
-`construction_year`     | num  | The year the pump was installed
-`extraction_type`       | char | Method of extraction used at a given pump site
-`extraction_type_group` | char | Aggregation of extraction_type categories
-`extraction_type_class` | char | Aggregation of extraction_type_group categories
-`management`            | char | Name of method employed for management of a given pump
-`management_group`      | char | Possibly an aggregation of management categories
-`payment`               | char | Categorical indicator of payment method required of pump users
-`payment_type`          | char | Appears to be a duplicate of payment categories
-`water_quality`         | char | Categorical indicator of water quality produced by pump
-`quality_group`         | char | Aggregation of water_quality categories
-`quantity`              | char | Categorical indicator of water quantity produced by pump
-`quantity_group`        | char | Aggregation of quantity categories
-`source`                | char | Type of source of the water for a given pump
-`source_type`           | char | Aggregation of source categories
-`source_type_class`     | char | Aggregation of source_type categories
-`waterpoint_type`       | char | The type of pump installed at a well site
-`waterpoint_type_group` | char | Aggregation of waterpoint_type categories
+Variable                | Definition                
+------------------------| ------------------------------------------------------------------
+`id`                    | Identification Variable (not a predictor)   
+`date_recorded`         | Date of data collection by survey company
+`recorded_by`           | Name of the data collection / survey company
+`amount_tsh      `      | Metric indicating total static head for pump; should be > 0
+`gps_height`            | Altitude of pump
+`population`            | Human population in immediate vicinty of pump
+`longitude`             | Longitudinal coordinate of pump
+`latitude`              | Latitudinal coordinate of pump
+`num_private`           | No definition is available for this variable
+`funder`                | Name of organization that funded installation of pump
+`installer`             | Name of organization that installed the pump
+`wpt_name`              | Name assigned to given waterpoint
+`basin`                 | Name of geographic water basin where pump is located
+`subvillage`            | Name of geographic subvillage where pump is located
+`region`                | Name of geographic region in Tanzania where pump is located
+`region_code`           | Numeric ID for 'region' variable
+`district_code`         | Numeric ID of district within a region where pump is located
+`lga`                   | Tanzania-specific geographic indicator of where pump is located
+`ward`                  | Name of Tanzanian geographic ward where pump is located
+`public_meeting`        | True/False indicator
+`scheme_management`     | Type of the organization responsible for management of pump
+`scheme_name`           | Name of organization responsible for management of pump
+`permit`                | True/False indicating whether the pump has valid permit
+`construction_year`     | The year the pump was installed
+`extraction_type`       | Method of extraction used at a given pump site
+`extraction_type_group` | Aggregation of extraction_type categories
+`extraction_type_class` | Aggregation of extraction_type_group categories
+`management`            | Name of method employed for management of a given pump
+`management_group`      | Possibly an aggregation of management categories
+`payment`               | Categorical indicator of payment method required of pump users
+`payment_type`          | Appears to be a duplicate of payment categories
+`water_quality`         | Categorical indicator of water quality produced by pump
+`quality_group`         | Aggregation of water_quality categories
+`quantity`              | Categorical indicator of water quantity produced by pump
+`quantity_group`        | Aggregation of quantity categories
+`source`                | Type of source of the water for a given pump
+`source_type`           | Aggregation of source categories
+`source_type_class`     | Aggregation of source_type categories
+`waterpoint_type`       | The type of pump installed at a well site
+`waterpoint_type_group` | Aggregation of waterpoint_type categories
 
 
 Each of these variables can be characterized as belonging to one of three classes of independent variables: non-categorical numeric variables; categorical variables; and administrative variables. The tables below summarize our analyses of missing and possibly invalid values for each variable.
@@ -270,7 +273,7 @@ summary(tanz$amount_tsh)
 boxplot(tanz$amount_tsh, col = "yellow")
 ```
 
-In fact, analysis of the __amount_tsh__ variable indicates that 41,639 of the 59,400 data records have a value of "0":
+In fact, analysis of the __amount_tsh__ variable indicates that 41,639 of the 59,400 data records (70.3%) have a value of "0":
 
 ```{r}
 length(tanz$amount_tsh[tanz$amount_tsh == 0])
@@ -389,12 +392,52 @@ Analysis shows that 14,771 of the non-zero values fall within the range of (1 : 
 ```{r}
 atsh <- tanz$amount_tsh[tanz$amount_tsh > 0 & tanz$amount_tsh <= 1000]
 length(atsh)
-hist(atsh, col = 'yellow', main = "Histogram of amount_tsh values (1:1000)")
+tot_atsh <- hist(atsh, col = 'yellow', main = "Histogram of amount_tsh values (1:1000)")
 ```
 
-This leaves slightly less than 3,000 records having __amount_tsh__ values that exceed 1000. Such values should be investigated to determine whether they are in fact valid values for the variable.
+This leaves slightly less than 3,000 records having __amount_tsh__ values that exceed 1000. Such values should be investigated to determine whether they are in fact valid values for the variable. Of those 3000 records, 2,810 are found to lie within the range of (1000:10,000):
 
-The __extraction_type_group__ and __waterpoint_type_group__ categorical variables are each at least somewhat indicative of the type of well deployed at each waterpoint. Assuming similar types of wells generally share somewhat similar physical characteristics and limitations, there may be a relationship we can infer between these two variables and the __amount_tsh__ value each well may reasonably have. The tables below summarize the median non-zero __amount_tsh__ values for each category of the __extraction_type_group__ and __waterpoint_type_group__ variables. 
+```{r}
+atsh_10k <- tanz$amount_tsh[tanz$amount_tsh > 1000 & tanz$amount_tsh <= 10000]
+length(atsh_10k)
+```
+
+Barplots for `amount_tsh` values within the range of (1:10000) suggest that pumps with relatively larger values may be more likely to be `functional` than are wells having smaller values. However, since the larger values might possibly be outliers and we lack valid `amount_tsh` values for more than 70% of the records within the data set, it seems highly unlikely that we can derive any valid predictive inferences from the plots.
+
+```{r, echo = FALSE}
+tot_atsh <- hist(tanz$amount_tsh[tanz$amount_tsh > 0 & tanz$amount_tsh <= 10000] , breaks = 30, plot = FALSE)
+atsh_func <- hist(tanz$amount_tsh[tanz$amount_tsh > 0 & tanz$amount_tsh <= 10000 & tanz$label == 'functional'], breaks = 30, plot = FALSE )
+
+barplot(atsh_func$counts / tot_atsh$counts,
+        names.arg = atsh_func$breaks[2:length(atsh_func$breaks)],
+        main = ('% of Wells Functional: 0 < amount_tsh <= 10000'), ylim = c(0, 1), col =
+          'yellow', las = 2, xlab = "amount_tsh (binned)",
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 )
+
+# add a line indicating overall functional percentage
+abline(h = functional[[1]], lty = 2, lwd = 1.5, col = "blue")
+```
+
+
+```{r, echo = FALSE}
+# amount_tsh vs non functional
+
+atsh_nfunc <- hist(tanz$amount_tsh[tanz$amount_tsh > 0 & tanz$amount_tsh <= 10000 & tanz$label == 'non functional'], plot = FALSE, breaks = 30 )
+
+barplot(atsh_nfunc$counts / tot_atsh$counts, 
+        names.arg = atsh_nfunc$breaks[2:length(atsh_nfunc$breaks)],
+        main = ('% of Wells Non Functional: 0 < amount_tsh <= 10000'), ylim = c(0, 1), col =
+          'yellow', las = 2, xlab = "amount_tsh (binned)",
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 )
+
+# add a line indicating overall non-functional percentage
+abline(h = n_func[[1]], lty = 2, lwd = 1.5, col = "red")
+
+# memory cleanup
+rm(atsh_func, atsh_nfunc, tot_atsh)
+```
+
+Given the large percentage of missing values for the variable, other variables within the data set were examined to determine whether any of their attributes might serve as indicators or proxies for missing  `amount_tsh` values. The __extraction_type_group__ and __waterpoint_type_group__ categorical variables are each at least somewhat indicative of the type of well deployed at each waterpoint. Assuming similar types of wells generally share somewhat similar physical characteristics and limitations, there may be a relationship we can infer between these two variables and the __amount_tsh__ value each well may reasonably have. The tables below summarize the median non-zero __amount_tsh__ values for each category of the __extraction_type_group__ and __waterpoint_type_group__ variables. 
 
 ```{r}
 # isolate non-zero amount_tsh records
@@ -443,7 +486,7 @@ length(tanz$gps_height[tanz$gps_height < 0])
 
 While it may be somewhat surprising to have a well located below sea level, Africa is in fact home to many areas where the actual land altitude falls below sea level. As such, further investigation is required to determine whether or not these negative values are valid within the context of the data set. 
 
-The histogram indicates the presence of a significant number of zero values for the variable. Further analysis finds a total of 20,438 data records containing a zero value for the __gps_height__ variable. 
+The histogram shown above indicates that the majority of non-zero and non-negative `gps_height` values lie in the range of (1000:2000). The histogram also indicates the presence of a significant number of zero values for the variable. Further analysis finds a total of 20,438 data records containing a zero value for the __gps_height__ variable. 
 
 ```{r}
 length(tanz$gps_height[tanz$gps_height == 0])
@@ -567,6 +610,58 @@ As shown in the table, more than one third of subvillages, wards and lga's repre
 In any event, the lack of accurate data values across so many geographic indicators strongly suggests that imputing the missing data values via geographic indicators will not be possible. 
 
 Further analysis is required to determine whether the remaining zero values are in fact valid data values or if they merely represent the lack of an accurate altitude measurement for the associated wells. However, given the widespread lack of accurate measurements found for these geographic areas it seems highly likely that the zero values are simply invalid.
+
+Barplots for the non-zero `gps_height` values show that pumps located at relatively higher altitudes are more likely to be `functional` than are pumps found at lower altitudes. However, pumps located at altitudes higher than a`gps_height` value of approximately 2500 are also the most likely to be `functional needs repair`, followed by those lying within the approximate range of (1000:1600). We also find that pumps located at relatively low altitudes (i.e., between 0 and 800) are the most likely to be non-functional.
+
+```{r, echo = FALSE}
+# gps_height vs functional
+
+tot_gps <- hist(tanz$gps_height[tanz$gps_height != 0], plot = FALSE )
+gps_func <- hist(tanz$gps_height[tanz$gps_height != 0 & tanz$label == 'functional'], plot = FALSE )
+
+barplot(gps_func$counts / tot_gps$counts, 
+        names.arg = gps_func$breaks[2:length(gps_func$breaks)],
+        main = ('% of Wells Functional: gps_height != 0'), ylim = c(0, 1), col =
+          'yellow', las = 2, xlab = "GPS Height (binned)",
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 )
+
+# add a line indicating overall functional percentage
+abline(h = functional[[1]], lty = 2, lwd = 1.5, col = "blue")
+```
+
+```{r, echo = FALSE}
+# gps_height vs functional needs repair
+
+#tot_gps <- hist(tanz$gps_height[tanz$gps_height != 0], plot = FALSE )
+gps_func_nr <- hist(tanz$gps_height[tanz$gps_height != 0 & tanz$label == 'functional needs repair'], plot = FALSE )
+
+barplot(gps_func_nr$counts / tot_gps$counts, 
+        names.arg = gps_func_nr$breaks[2:length(gps_func_nr$breaks)],
+        main = ('% of Wells Functional Needs Repair: gps_height != 0'), ylim = c(0, 0.2), col =
+          'yellow', las = 2, xlab = "GPS Height (binned)",
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 )
+
+# add a line indicating overall func needs repair percentage
+abline(h = func_n_rep[[1]], lty = 2, lwd = 1.5, col = "red")
+```
+
+```{r, echo = FALSE}
+# gps_height vs non functional
+
+gps_nfunc <- hist(tanz$gps_height[tanz$gps_height != 0 & tanz$label == 'non functional'], plot = FALSE )
+
+barplot(gps_nfunc$counts / tot_gps$counts, 
+        names.arg = gps_nfunc$breaks[2:length(gps_nfunc$breaks)],
+        main = ('% of Wells Non Functional: gps_height != 0'), ylim = c(0, 1), col =
+          'yellow', las = 2, xlab = "GPS Height (binned)",
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 )
+
+# add a line indicating overall non-functional percentage
+abline(h = n_func[[1]], lty = 2, lwd = 1.5, col = "red")
+
+# memory cleanup
+rm(gps_func, gps_func_nr, gps_nfunc, tot_gps)
+```
 
 ### population
 
@@ -704,6 +799,57 @@ hist(tanz$population[tanz$population > 0], col = "yellow")
 ```
 
 The summary statistics and plots suggest that the vast majority of the wells are located in the vicinity of small villages comprised of less than 500 inhabitants. This suggests that it may be feasible to impute the missing __population__ values for predictive modeling purposes via use of the median. However, such an approach may have an adverse effect on the distribution of the variable.
+
+Barplots for the non-zero `population` values of less than 1000 show no obvious relationship between population and the likelihood of a pump being `functional`. However, pumps located in areas with relatively larger populations do appear to be somewhat more likely to have a status of `functional needs repair` than are pumps located in less densely populated areas. Finally, pumps located in relatively higher population areas appear to be somewhat less likely to be `non functional` than are pumps located in areas with relatively smaller populations.
+
+```{r, echo = FALSE}
+# gps_height vs functional
+
+tot_pop <- hist(tanz$population[tanz$population > 0 & tanz$population <= 1000], plot = FALSE )
+pop_func <- hist(tanz$population[tanz$population > 0 & tanz$population <= 1000 & tanz$label == 'functional'], plot = FALSE )
+
+barplot(pop_func$counts / tot_pop$counts, 
+        names.arg = pop_func$breaks[2:length(pop_func$breaks)],
+        main = ('% of Wells Functional: 0 < population <= 1000'), ylim = c(0, 1), col =
+          'yellow', las = 2, xlab = "Population (binned)",
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 )
+
+# add a line indicating overall functional percentage
+abline(h = functional[[1]], lty = 2, lwd = 1.5, col = "blue")
+```
+
+```{r, echo = FALSE}
+# population vs functional needs repair
+
+pop_func_nr <- hist(tanz$population[tanz$population > 0 & tanz$population <= 1000 & tanz$label == 'functional needs repair'], breaks = 19, plot = FALSE )
+
+barplot(pop_func_nr$counts / tot_pop$counts, 
+        names.arg = pop_func_nr$breaks[2:length(pop_func_nr$breaks)],
+        main = ('% of Wells Functional Needs Repair: 0 < population <= 1000'), ylim = c(0, .3), col =
+          'yellow', las = 2, xlab = "Population (binned)",
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 )
+
+# add a line indicating overall func needs repair percentage
+abline(h = func_n_rep[[1]], lty = 2, lwd = 1.5, col = "red")
+```
+
+```{r, echo = FALSE}
+# population vs non functional
+
+pop_nfunc <- hist(tanz$population[tanz$population > 0 & tanz$population <= 1000 & tanz$label == 'non functional'], plot = FALSE, breaks = 19 )
+
+barplot(pop_nfunc$counts / tot_pop$counts, 
+        names.arg = pop_nfunc$breaks[2:length(pop_nfunc$breaks)],
+        main = ('% of Wells Non Functional: 0 < population <= 1000'), ylim = c(0, 1), col =
+          'yellow', las = 2, xlab = "Population (binned)",
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 )
+
+# add a line indicating overall non-functional percentage
+abline(h = n_func[[1]], lty = 2, lwd = 1.5, col = "red")
+
+# memory cleanup
+rm(pop_func, pop_func_nr, pop_nfunc, tot_pop)
+```
 
 
 ### Longitude & Latitude

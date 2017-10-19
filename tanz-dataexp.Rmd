@@ -885,6 +885,108 @@ nrow(subset(tanz, latitude > -1  & longitude == 0))
 
 The fact that these values appear to be coincident strongly suggests that they are simply invalid data values. However, for each record within the data set we are provided with a variety of other geographical indicators, including __ward__, __district_code__, __region__, and __basin__. Given the relatively small number of invalid __longitude__ and __latitude__ values present within the data set, a reasonable approach to their imputation could be based on calculating the mean or median __longitude__ and __latitude__ values for a data record's __ward__ or __region__ and using those values as the imputed values for the missing data.
 
+Barplots for the non-zero `longitude` values indicate that pumps located between 34 and 38 degrees longitude are more likley to be `functional` than are pumps at other longitudes, while those located between 30 and 31 degrees longitude are much more likely to have a status of `functional needs repair` than are pumps located at other longitudes. Finally, we see that `longitude` can be somewhat indicative of how likely a pump is to be `non functional`. Therefore, the `longitude` variable appears to offer a fair amount of predictive value.
+
+```{r, echo = FALSE}
+# longitude vs functional
+
+tot_long <- hist(tanz$longitude[tanz$longitude > 0 ], plot = FALSE )
+long_func <- hist(tanz$longitude[tanz$longitude > 0 & tanz$label == 'functional'], plot = FALSE )
+
+barplot(long_func$counts / tot_long$counts, 
+        names.arg = long_func$breaks[2:length(long_func$breaks)],
+        main = ('% of Wells Functional: longitude > 0'), ylim = c(0, 1), col =
+          'yellow', las = 2, xlab = "Longitude (binned)",
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 )
+
+# add a line indicating overall functional percentage
+abline(h = functional[[1]], lty = 2, lwd = 1.5, col = "blue")
+```
+
+```{r, echo = FALSE}
+# longitude vs functional needs repair
+
+long_func_nr <- hist(tanz$longitude[tanz$longitude > 0 & tanz$label == 'functional needs repair'], breaks = 19, plot = FALSE )
+
+barplot(long_func_nr$counts / tot_long$counts, 
+        names.arg = long_func_nr$breaks[2:length(long_func_nr$breaks)],
+        main = ('% of Wells Functional Needs Repair: longitude > 0'), ylim = c(0, .5), col =
+          'yellow', las = 2, xlab = "Longitude (binned)",
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 )
+
+# add a line indicating overall func needs repair percentage
+abline(h = func_n_rep[[1]], lty = 2, lwd = 1.5, col = "red")
+```
+
+```{r, echo = FALSE}
+# longitude vs non functional
+
+long_nfunc <- hist(tanz$longitude[tanz$longitude > 0 & tanz$label == 'non functional'], plot = FALSE, breaks = 19 )
+
+barplot(long_nfunc$counts / tot_long$counts, 
+        names.arg = long_nfunc$breaks[2:length(long_nfunc$breaks)],
+        main = ('% of Wells Non Functional: longitude > 0'), ylim = c(0, 1), col =
+          'yellow', las = 2, xlab = "Longitude (binned)",
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 )
+
+# add a line indicating overall non-functional percentage
+abline(h = n_func[[1]], lty = 2, lwd = 1.5, col = "red")
+
+# memory cleanup
+rm(long_func, long_func_nr, long_nfunc, tot_long)
+```
+
+Barplots for `latitude` values of less than (-1) indicate that pumps at some latitudes are much more likely to be either `functional` or `functional needs repair` than are pumps at other latitudes. Therefore, the `latitude` variable appears to offer a fair amount of predictive value.
+
+```{r, echo = FALSE}
+# latitude vs functional
+
+tot_lat <- hist(tanz$latitude[tanz$latitude < -1 ], plot = FALSE )
+lat_func <- hist(tanz$latitude[tanz$latitude < -1 & tanz$label == 'functional'], plot = FALSE )
+
+barplot(lat_func$counts / tot_lat$counts, 
+        names.arg = lat_func$breaks[2:length(lat_func$breaks)],
+        main = ('% of Wells Functional: latitude < -1'), ylim = c(0, 1), col =
+          'yellow', las = 2, xlab = "Latitude (binned)",
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 )
+
+# add a line indicating overall functional percentage
+abline(h = functional[[1]], lty = 2, lwd = 1.5, col = "blue")
+```
+
+```{r, echo = FALSE}
+# latitude vs functional needs repair
+
+lat_func_nr <- hist(tanz$latitude[tanz$latitude < -1 & tanz$label == 'functional needs repair'], breaks = 19, plot = FALSE )
+
+barplot(lat_func_nr$counts / tot_lat$counts, 
+        names.arg = lat_func_nr$breaks[2:length(lat_func_nr$breaks)],
+        main = ('% of Wells Functional Needs Repair: latitude < -1'), ylim = c(0, .5), col =
+          'yellow', las = 2, xlab = "Latitude (binned)",
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 )
+
+# add a line indicating overall func needs repair percentage
+abline(h = func_n_rep[[1]], lty = 2, lwd = 1.5, col = "red")
+```
+
+```{r, echo = FALSE}
+# latitude vs non functional
+
+lat_nfunc <- hist(tanz$latitude[tanz$latitude < -1 & tanz$label == 'non functional'], plot = FALSE, breaks = 19 )
+
+barplot(lat_nfunc$counts / tot_lat$counts, 
+        names.arg = lat_nfunc$breaks[2:length(lat_nfunc$breaks)],
+        main = ('% of Wells Non Functional: latitude < -1'), ylim = c(0, 1), col =
+          'yellow', las = 2, xlab = "Latitude (binned)",
+        cex.main=.90, cex.lab=.75, cex.axis=0.75, cex.names=.70 )
+
+# add a line indicating overall non-functional percentage
+abline(h = n_func[[1]], lty = 2, lwd = 1.5, col = "red")
+
+# memory cleanup
+rm(lat_func, lat_func_nr, lat_nfunc, tot_lat)
+```
+
 
 ### num_private
 

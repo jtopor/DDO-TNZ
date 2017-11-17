@@ -1,0 +1,399 @@
+---
+title: "tanz-mlr"
+author: "James Topor"
+date: "November 3, 2017"
+output: html_document
+---
+
+## Read file from github
+
+```{r}
+tanz_m <- read.csv("https://raw.githubusercontent.com/jtopor/DDO-TNZ/master/tanz-imputations.csv", header = TRUE, stringsAsFactors = FALSE)
+```
+
+
+## Data Prep
+
+```{r}
+
+# convert categoricals to factors
+tanz_m$basin <- factor(tanz_m$basin)
+tanz_m$region <- factor(tanz_m$region)
+tanz_m$region_code <- factor(tanz_m$region_code)
+tanz_m$district_code <- factor(tanz_m$district_code)
+tanz_m$public_meeting_new <- factor(tanz_m$public_meeting_new)
+tanz_m$scheme_management <- factor(tanz_m$scheme_management)
+tanz_m$permit_new <- factor(tanz_m$permit_new)
+tanz_m$extraction_type <- factor(tanz_m$extraction_type)
+tanz_m$extraction_type_class <- factor(tanz_m$extraction_type_class)
+tanz_m$management <- factor(tanz_m$management)
+
+tanz_m$payment <- factor(tanz_m$payment)
+tanz_m$water_quality <- factor(tanz_m$water_quality)
+
+tanz_m$quantity <- factor(tanz_m$quantity)
+tanz_m$source <- factor(tanz_m$source)
+
+tanz_m$waterpoint_type <- factor(tanz_m$waterpoint_type)
+
+
+# convert labels to integers
+tanz_m$label[which(tanz_m$label == 'functional')] <- 0
+tanz_m$label[which(tanz_m$label == 'functional needs repair')] <- 1
+tanz_m$label[which(tanz_m$label == 'non functional')] <- 2
+
+tanz_m$label <- factor(tanz_m$label)
+
+library(caret)
+
+# split the Dataset in to train and validation subsets
+set.seed(3033)
+intrain <- createDataPartition(y = tanz_m$label, p= 0.7, list = FALSE)
+training <- tanz_m[intrain,]
+testing <- tanz_m[-intrain,]
+
+```
+
+Data is now prepped for model building.
+
+_____
+
+## Build a multinomial logistic regression model
+
+Construct a model by adding one variable at a time in descending order of predictive value as determined via simple MLR models created using each individual independent variable as the sole predictor.
+
+
+
+```{r}
+library(nnet) # for multinom logistic regression
+
+mlr1 <- multinom(label ~                        
+quantity + waterpoint_type + extraction_type + pump_age + management +
+                      region_code + district_code + water_quality + payment +
+                      basin + source + scheme_management + latitude + longitude +
+                      public_meeting_new + permit_new + amount_tsh_new + 
+                      population_new +
+                      installer_0 +
+                      installer_cen +
+                      installer_ces +
+                      installer_com +
+                      installer_dan +
+                      installer_dis +
+                      installer_dwe +
+                      installer_fin +
+                      installer_gov +
+                      installer_hes +
+                      installer_kkk +
+                      installer_other +
+                      installer_rwe +
+                      installer_tcr +
+                      installer_unk +
+                      installer_wor +
+                      funder_dan +
+                      funder_dhv +
+                      funder_dis +
+                      funder_dws +
+                      funder_fin +
+                      funder_gov +
+                      funder_hes +
+                      funder_kkk +
+                      funder_other +
+                      funder_pri +
+                      funder_rws +
+                      funder_tas +
+                      funder_uni +
+                      funder_unk +
+                      funder_wat +
+                      funder_wor +
+                      lga_freq_bin_1 +
+                      lga_freq_bin_10 +
+                      lga_freq_bin_11 +
+                      lga_freq_bin_2 +
+                      lga_freq_bin_20 +
+                      lga_freq_bin_3 +
+                      lga_freq_bin_4 +
+                      lga_freq_bin_5 +
+                      lga_freq_bin_6 +
+                      lga_freq_bin_7 +
+                      lga_freq_bin_8 +
+                      lga_freq_bin_9 +
+                      ward_freq_bin_1 +
+                      ward_freq_bin_10 +
+                      ward_freq_bin_11 +
+                      ward_freq_bin_12 +
+                      ward_freq_bin_13 +
+                      ward_freq_bin_14 +
+                      ward_freq_bin_15 +
+                      ward_freq_bin_16 +
+                      ward_freq_bin_17 +
+                      ward_freq_bin_2 +
+                      ward_freq_bin_20 +
+                      ward_freq_bin_3 +
+                      ward_freq_bin_4 +
+                      ward_freq_bin_5 +
+                      ward_freq_bin_6 +
+                      ward_freq_bin_7 +
+                      ward_freq_bin_8 +
+                      ward_freq_bin_9,
+  
+                     # subvillage_freq_bin_1 +
+                    #  subvillage_freq_bin_10 +
+                     # subvillage_freq_bin_11 +
+                    #  subvillage_freq_bin_15 +
+                    #  subvillage_freq_bin_2 +
+                    #  subvillage_freq_bin_20 +
+                    #  subvillage_freq_bin_3 +
+                    #  subvillage_freq_bin_4 +
+                    #  subvillage_freq_bin_5 +
+                    #  subvillage_freq_bin_6 +
+                    #  subvillage_freq_bin_7 +
+                    #  subvillage_freq_bin_8,
+
+                 data = tanz_m, maxit = 200)
+
+# confusion matrix - training subset
+cm1 <- table(predict(mlr1, tanz_m), tanz_m$label)
+# display: off-diag numbers are mis-classifications
+cm1
+
+# calculate percentage of accurate classifications
+sum(diag(cm1))/sum(cm1)
+
+mlr1$AIC
+
+#summary(mlr1)
+
+#pp <- fitted(mlr1)
+#head(pp, n = 20)
+
+# -----------------------
+
+
+
+# memory cleanup
+rm(cm1, cm2)
+
+# use step() function to check for variables that might be discarded
+# mmodi <- step(mlr1)
+```
+
+
+## Check variable importance:
+
+```{r}
+importance <- varImp(mlr1)
+
+importance <- importance[order(importance$Overall,decreasing = TRUE), ,drop = FALSE]
+
+print(importance)
+
+# memory cleanup
+rm(gbm1, gbm_testing, gbm_tab, gbm_mod)
+
+```
+
+_____ 
+
+Now do cross validation using model constructed above: 75.08% cross validated accuracy. 
+
+```{r, eval = FALSE}
+
+trctrl <- trainControl(method = "repeatedcv", number = 5, repeats = 2)
+set.seed(333)
+
+mlr_fit <- train(label ~                        
+quantity + waterpoint_type + extraction_type + pump_age + management +
+                      region_code + district_code + water_quality + payment +
+                      basin + source + scheme_management + latitude + longitude +
+                      public_meeting_new + permit_new + amount_tsh_new + 
+                      population_new +
+                      installer_0 +
+                      installer_cen +
+                      installer_ces +
+                      installer_com +
+                      installer_dan +
+                      installer_dis +
+                      installer_dwe +
+                      installer_fin +
+                      installer_gov +
+                      installer_hes +
+                      installer_kkk +
+                      installer_other +
+                      installer_rwe +
+                      installer_tcr +
+                      installer_unk +
+                      installer_wor +
+                      funder_dan +
+                      funder_dhv +
+                      funder_dis +
+                      funder_dws +
+                      funder_fin +
+                      funder_gov +
+                      funder_hes +
+                      funder_kkk +
+                      funder_other +
+                      funder_pri +
+                      funder_rws +
+                      funder_tas +
+                      funder_uni +
+                      funder_unk +
+                      funder_wat +
+                      funder_wor +
+                      lga_freq_bin_1 +
+                      lga_freq_bin_10 +
+                      lga_freq_bin_11 +
+                      lga_freq_bin_2 +
+                      lga_freq_bin_20 +
+                      lga_freq_bin_3 +
+                      lga_freq_bin_4 +
+                      lga_freq_bin_5 +
+                      lga_freq_bin_6 +
+                      lga_freq_bin_7 +
+                      lga_freq_bin_8 +
+                      lga_freq_bin_9 +
+                      ward_freq_bin_1 +
+                      ward_freq_bin_10 +
+                      ward_freq_bin_11 +
+                      ward_freq_bin_12 +
+                      ward_freq_bin_13 +
+                      ward_freq_bin_14 +
+                      ward_freq_bin_15 +
+                      ward_freq_bin_16 +
+                      ward_freq_bin_17 +
+                      ward_freq_bin_2 +
+                      ward_freq_bin_20 +
+                      ward_freq_bin_3 +
+                      ward_freq_bin_4 +
+                      ward_freq_bin_5 +
+                      ward_freq_bin_6 +
+                      ward_freq_bin_7 +
+                      ward_freq_bin_8 +
+                      ward_freq_bin_9,
+
+                      data = training, method = "multinom",
+                      maxit = 200,
+                      trControl=trctrl,
+                      preProcess = c("center", "scale"),
+                      tuneLength = 10
+        )
+
+# check results
+mlr_fit
+````
+
+Penalized Multinomial Regression 
+
+41581 samples
+   80 predictor
+    3 classes: '0', '1', '2' 
+
+Pre-processing: centered (194), scaled (194) 
+Resampling: Cross-Validated (5 fold, repeated 2 times) 
+Summary of sample sizes: 33266, 33264, 33265, 33264, 33265, 33265, ... 
+Resampling results across tuning parameters:
+
+  decay         Accuracy   Kappa    
+  0.0000000000  0.7509677  0.5156793
+  0.0001000000  0.7510158  0.5157656
+  0.0002371374  0.7509798  0.5156985
+  0.0005623413  0.7509557  0.5156735
+  0.0013335214  0.7508475  0.5154472
+  0.0031622777  0.7509317  0.5156123
+  0.0074989421  0.7511721  0.5161091
+  0.0177827941  0.7509798  0.5157172
+  0.0421696503  0.7510038  0.5158278
+  0.1000000000  0.7511120  0.5160545
+
+Accuracy was used to select the optimal model using  the largest value.
+The final value used for the model was decay = 0.007498942.
+
+```{r, eval = FALSE}
+# get predictions
+test_pred <- predict(mlr_fit, newdata = testing)
+# test_pred
+
+# check confusion matrix
+confusionMatrix(test_pred, testing$label )
+```
+Confusion Matrix and Statistics
+
+          Reference
+Prediction    0    1    2
+         0 8716  895 2279
+         1   67  147   52
+         2  894  253 4516
+
+Overall Statistics
+                                          
+               Accuracy : 0.7508          
+                 95% CI : (0.7444, 0.7572)
+    No Information Rate : 0.5431          
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.5156          
+ Mcnemar's Test P-Value : < 2.2e-16       
+
+Statistics by Class:
+
+                     Class: 0 Class: 1 Class: 2
+Sensitivity            0.9007  0.11351   0.6596
+Specificity            0.6102  0.99280   0.8955
+Pos Pred Value         0.7331  0.55263   0.7975
+Neg Pred Value         0.8379  0.93460   0.8082
+Prevalence             0.5431  0.07268   0.3843
+Detection Rate         0.4891  0.00825   0.2534
+Detection Prevalence   0.6673  0.01493   0.3178
+Balanced Accuracy      0.7554  0.55316   0.7775
+
+
+## Make predictions for submit data set
+
+```{r}
+# 
+tanz_subm <- read.csv("https://raw.githubusercontent.com/jtopor/DDO-TNZ/master/tanz-submit-imps.csv", header = TRUE, stringsAsFactors = FALSE)
+
+# convert categoricals to factors
+tanz_subm$basin <- factor(tanz_subm$basin)
+tanz_subm$region <- factor(tanz_subm$region)
+tanz_subm$region_code <- factor(tanz_subm$region_code)
+tanz_subm$district_code <- factor(tanz_subm$district_code)
+tanz_subm$public_meeting_new <- factor(tanz_subm$public_meeting_new)
+tanz_subm$scheme_management <- factor(tanz_subm$scheme_management)
+
+tanz_subm$permit_new <- factor(tanz_subm$permit_new)
+tanz_subm$extraction_type <- factor(tanz_subm$extraction_type)
+tanz_subm$extraction_type_class <- factor(tanz_subm$extraction_type_class)
+tanz_subm$management <- factor(tanz_subm$management)
+
+tanz_subm$payment <- factor(tanz_subm$payment)
+tanz_subm$water_quality <- factor(tanz_subm$water_quality)
+
+tanz_subm$quantity <- factor(tanz_subm$quantity)
+tanz_subm$source <- factor(tanz_subm$source)
+
+tanz_subm$waterpoint_type <- factor(tanz_subm$waterpoint_type)
+
+
+# make predictions for the validation
+mlrsub1 <- predict(mlr1, tanz_subm)
+
+# add predictions to submit dataframe
+# add predictions to submit dataframe
+tanz_subm$status_group <- as.character(mlrsub1)
+
+# convert integer labels to corresponding text
+tanz_subm$status_group[which(tanz_subm$status_group == '0')] <- 'functional'
+tanz_subm$status_group[which(tanz_subm$status_group == '1')] <- 'functional needs repair'
+tanz_subm$status_group[which(tanz_subm$status_group == '2')] <- 'non functional'
+
+# write id + status_group cols to a file for submission
+
+mlr_preds <- cbind(tanz_subm$id, tanz_subm$status_group)
+colnames(mlr_preds) <- c("id", "status_group")
+
+
+write.csv(mlr_preds, file = "C:/data/698/mlr_preds.csv", row.names = FALSE)
+
+rm(mlr_preds, mlrsub1)
+
+```

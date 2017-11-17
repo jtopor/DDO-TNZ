@@ -1,0 +1,257 @@
+---
+title: "tanz-bag.Rmd"
+author: "James Topor"
+date: "November 3, 2017"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+
+# Bagging Classification and Regression Trees (BCART)
+
+
+## Read file from github
+
+```{r}
+tanz_m <- read.csv("https://raw.githubusercontent.com/jtopor/DDO-TNZ/master/tanz-imputations.csv", header = TRUE, stringsAsFactors = FALSE)
+```
+
+
+## Data Prep
+
+```{r}
+
+# convert categoricals to factors
+tanz_m$basin <- factor(tanz_m$basin)
+tanz_m$region <- factor(tanz_m$region)
+tanz_m$region_code <- factor(tanz_m$region_code)
+tanz_m$district_code <- factor(tanz_m$district_code)
+tanz_m$public_meeting_new <- factor(tanz_m$public_meeting_new)
+tanz_m$scheme_management <- factor(tanz_m$scheme_management)
+tanz_m$permit_new <- factor(tanz_m$permit_new)
+tanz_m$extraction_type <- factor(tanz_m$extraction_type)
+tanz_m$extraction_type_class <- factor(tanz_m$extraction_type_class)
+tanz_m$management <- factor(tanz_m$management)
+
+tanz_m$payment <- factor(tanz_m$payment)
+tanz_m$water_quality <- factor(tanz_m$water_quality)
+
+tanz_m$quantity <- factor(tanz_m$quantity)
+tanz_m$source <- factor(tanz_m$source)
+
+tanz_m$waterpoint_type <- factor(tanz_m$waterpoint_type)
+
+
+# convert labels to integers
+tanz_m$label[which(tanz_m$label == 'functional')] <- 0
+tanz_m$label[which(tanz_m$label == 'functional needs repair')] <- 1
+tanz_m$label[which(tanz_m$label == 'non functional')] <- 2
+
+tanz_m$label <- factor(tanz_m$label)
+
+library(caret)
+
+# split the Dataset in to train and validation subsets
+set.seed(3033)
+intrain <- createDataPartition(y = tanz_m$label, p= 0.7, list = FALSE)
+training <- tanz_m[intrain,]
+testing <- tanz_m[-intrain,]
+
+```
+
+Data is now prepped for model building.
+
+_____
+
+## Build a booststrap aggregation algorithm
+
+Bootstrap Aggregation
+
+Achieves 79.91% accuracy on validation subset
+
+```{r, eval = FALSE}
+library(ipred)
+
+bag_mod <- bagging(label ~                        
+quantity + waterpoint_type + extraction_type + pump_age + management +
+                      region_code + district_code + water_quality + payment +
+                      basin + source + scheme_management + latitude + longitude +
+                      public_meeting_new + permit_new + amount_tsh_new + 
+                      population_new +
+                      installer_0 +
+                      installer_cen +
+                      installer_ces +
+                      installer_com +
+                      installer_dan +
+                      installer_dis +
+                      installer_dwe +
+                      installer_fin +
+                      installer_gov +
+                      installer_hes +
+                      installer_kkk +
+                      installer_other +
+                      installer_rwe +
+                      installer_tcr +
+                      installer_unk +
+                      installer_wor +
+                      funder_dan +
+                      funder_dhv +
+                      funder_dis +
+                      funder_dws +
+                      funder_fin +
+                      funder_gov +
+                      funder_hes +
+                      funder_kkk +
+                      funder_other +
+                      funder_pri +
+                      funder_rws +
+                      funder_tas +
+                      funder_uni +
+                      funder_unk +
+                      funder_wat +
+                      funder_wor +
+                      lga_freq_bin_1 +
+                      lga_freq_bin_10 +
+                      lga_freq_bin_11 +
+                      lga_freq_bin_2 +
+                      lga_freq_bin_20 +
+                      lga_freq_bin_3 +
+                      lga_freq_bin_4 +
+                      lga_freq_bin_5 +
+                      lga_freq_bin_6 +
+                      lga_freq_bin_7 +
+                      lga_freq_bin_8 +
+                      lga_freq_bin_9 +
+                      ward_freq_bin_1 +
+                      ward_freq_bin_10 +
+                      ward_freq_bin_11 +
+                      ward_freq_bin_12 +
+                      ward_freq_bin_13 +
+                      ward_freq_bin_14 +
+                      ward_freq_bin_15 +
+                      ward_freq_bin_16 +
+                      ward_freq_bin_17 +
+                      ward_freq_bin_2 +
+                      ward_freq_bin_20 +
+                      ward_freq_bin_3 +
+                      ward_freq_bin_4 +
+                      ward_freq_bin_5 +
+                      ward_freq_bin_6 +
+                      ward_freq_bin_7 +
+                      ward_freq_bin_8 +
+                      ward_freq_bin_9 +
+  
+                    subvillage_freq_bin_1 +
+                      subvillage_freq_bin_10 +
+                      subvillage_freq_bin_11 +
+                      subvillage_freq_bin_15 +
+                      subvillage_freq_bin_2 +
+                     subvillage_freq_bin_20 +
+                      subvillage_freq_bin_3 +
+                      subvillage_freq_bin_4 +
+                      subvillage_freq_bin_5 +
+                      subvillage_freq_bin_6 +
+                      subvillage_freq_bin_7 +
+                      subvillage_freq_bin_8 +
+                   gps_height_new,
+
+                 data = tanz_m)
+
+# summary(bag_mod)
+
+bag_testing <- subset(tanz_m, select = -c(label))
+bag1 <- predict(bag_mod, bag_testing)
+
+# make predictions
+# confusion matrix - validation subset
+bag_tab <- table(bag1, tanz_m$label)
+# display: off-diag numbers are mis-classifications
+confusionMatrix(bag_tab)
+
+# calculate percentage of misclassifications
+# sum(diag(svm1))/sum(svm1)
+
+# memory cleanup
+rm(bag1, bag_testing, bag_tab)
+```
+
+Confusion Matrix and Statistics
+
+    
+bag1     0     1     2
+   0 32164   191   232
+   1    39  4100    17
+   2    56    26 22575
+
+Overall Statistics
+                                          
+               Accuracy : 0.9906          
+                 95% CI : (0.9897, 0.9913)
+    No Information Rate : 0.5431          
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.9828          
+ Mcnemar's Test P-Value : < 2.2e-16       
+
+Statistics by Class:
+
+                     Class: 0 Class: 1 Class: 2
+Sensitivity            0.9971  0.94973   0.9891
+Specificity            0.9844  0.99898   0.9978
+Pos Pred Value         0.9870  0.98653   0.9964
+Neg Pred Value         0.9965  0.99607   0.9932
+Prevalence             0.5431  0.07268   0.3842
+Detection Rate         0.5415  0.06902   0.3801
+Detection Prevalence   0.5486  0.06997   0.3814
+Balanced Accuracy      0.9907  0.97436   0.9934
+
+## Make predictions for submit data set
+
+```{r}
+# 
+tanz_subm <- read.csv("C:/data/698/tanz-submit-imps.csv", header = TRUE, stringsAsFactors = FALSE)
+
+# convert categoricals to factors
+tanz_subm$basin <- factor(tanz_subm$basin)
+tanz_subm$region <- factor(tanz_subm$region)
+tanz_subm$region_code <- factor(tanz_subm$region_code)
+tanz_subm$district_code <- factor(tanz_subm$district_code)
+tanz_subm$public_meeting_new <- factor(tanz_subm$public_meeting_new)
+tanz_subm$scheme_management <- factor(tanz_subm$scheme_management)
+tanz_subm$permit_new <- factor(tanz_subm$permit_new)
+tanz_subm$extraction_type <- factor(tanz_subm$extraction_type)
+tanz_subm$extraction_type_class <- factor(tanz_subm$extraction_type_class)
+tanz_subm$management <- factor(tanz_subm$management)
+
+tanz_subm$payment <- factor(tanz_subm$payment)
+tanz_subm$water_quality <- factor(tanz_subm$water_quality)
+
+tanz_subm$quantity <- factor(tanz_subm$quantity)
+tanz_subm$source <- factor(tanz_subm$source)
+
+tanz_subm$waterpoint_type <- factor(tanz_subm$waterpoint_type)
+
+
+# make predictions for the validation
+bagsub1 <- predict(bag_mod, tanz_subm)
+
+# add predictions to submit dataframe
+tanz_subm$status_group <- as.character(bagsub1)
+
+
+# convert integer labels to corresponding text
+tanz_subm$status_group[which(tanz_subm$status_group == '0')] <- 'functional'
+tanz_subm$status_group[which(tanz_subm$status_group == '1')] <- 'functional needs repair'
+tanz_subm$status_group[which(tanz_subm$status_group == '2')] <- 'non functional'
+
+# write id + status_group cols to a file for submission
+
+bag_preds <- cbind(tanz_subm$id, tanz_subm$status_group)
+colnames(bag_preds) <- c("id", "status_group")
+
+write.csv(bag_preds, file = "C:/data/698/bag_preds.csv", row.names = FALSE)
+
+rm(bag_preds, bagsub1)
+
+```

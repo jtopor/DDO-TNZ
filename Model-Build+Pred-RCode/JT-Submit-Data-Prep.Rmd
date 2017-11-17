@@ -1,0 +1,631 @@
+---
+title: "Capstone Predictive Modeling"
+author: "James Topor"
+date: "October 3, 2017"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+```{r, echo = FALSE, warning=FALSE, message=FALSE}
+library(knitr)
+library(tidyr)
+library(dplyr)
+library(lubridate) # used to extract year from date_recorded
+
+# disable scientific notation
+options(scipen = 999)
+```
+
+11-1-2017
+Load binned/dummied data
+```{r}
+# load sekhars binned data challenge submit file
+binned <- read.csv("c:/data/698/submission_transformed.csv", header = TRUE, stringsAsFactors = FALSE)
+
+# get subset of variables to be used
+
+binned2 <- subset(binned, select= c(
+                      id,
+                      funder_dan,
+                      funder_dhv,
+                      funder_dis,
+                      funder_dws,
+                      funder_fin,
+                      funder_gov,
+                      funder_hes,
+                      funder_kkk,
+                      funder_other,
+                      funder_pri,
+                      funder_rws,
+                      funder_tas,
+                      funder_uni,
+                      funder_unk,
+                      funder_wat,
+                      funder_wor,
+                      
+                      # installer
+                      installer_0,
+                      installer_cen,
+                      installer_ces,
+                      installer_com,
+                      installer_dan,
+                      installer_dis,
+                      installer_dwe,
+                      installer_fin,
+                      installer_gov,
+                      installer_hes,
+                      installer_kkk,
+                      installer_other,
+                      installer_rwe,
+                      installer_tcr,
+                      installer_unk,
+                      installer_wor,
+                      
+                      # lat _ long
+                      latitude,
+                      longitude,
+                      
+                      # ward + lga frequency bins
+                      ward_freq_bin_1,
+                      ward_freq_bin_10,
+                      ward_freq_bin_11,
+                      ward_freq_bin_12,
+                      ward_freq_bin_13,
+                      ward_freq_bin_14,
+                      ward_freq_bin_15,
+                      ward_freq_bin_16,
+                      ward_freq_bin_17,
+                      ward_freq_bin_2,
+                      ward_freq_bin_20,
+                      ward_freq_bin_3,
+                      ward_freq_bin_4,
+                      ward_freq_bin_5,
+                      ward_freq_bin_6,
+                      ward_freq_bin_7,
+                      ward_freq_bin_8,
+                      ward_freq_bin_9,
+                      lga_freq_bin_1,
+                      lga_freq_bin_10,
+                      lga_freq_bin_11,
+                      lga_freq_bin_2,
+                      lga_freq_bin_20,
+                      lga_freq_bin_3,
+                      lga_freq_bin_4,
+                      lga_freq_bin_5,
+                      lga_freq_bin_6,
+                      lga_freq_bin_7,
+                      lga_freq_bin_8,
+                      lga_freq_bin_9,
+                      
+                      # subvillage
+                      subvillage_freq_bin_1,
+                      subvillage_freq_bin_10,
+                      subvillage_freq_bin_11,
+                      subvillage_freq_bin_15,
+                      subvillage_freq_bin_2,
+                      subvillage_freq_bin_20,
+                      subvillage_freq_bin_3,
+                      subvillage_freq_bin_4,
+                      subvillage_freq_bin_5,
+                      subvillage_freq_bin_6,
+                      subvillage_freq_bin_7,
+                      subvillage_freq_bin_8
+
+                      ))
+
+rm(binned)
+
+# select desired variables from original data set
+# load tanzania training data file
+tanz_test <- read.csv("https://raw.githubusercontent.com/jtopor/DDO-TNZ/master/Tanz-Test-DataSet.csv", header = TRUE, stringsAsFactors = FALSE)
+
+
+# subset tanz data set to include only those variables that are useful for modeling
+
+tanz_m <- subset (tanz_test, select = c(
+                  id,
+                  amount_tsh,
+                  date_recorded, # for age variable computation
+                  gps_height,
+                  basin,
+                  subvillage,
+                  region,
+                  region_code,
+                  district_code,
+                  lga,
+                  ward,
+                  population,
+                  public_meeting,
+                  scheme_management,
+                  permit,
+                  construction_year,
+                  extraction_type,
+                  extraction_type_group, # needed for amount_tsh imputation
+                  extraction_type_class,
+                  management,
+                  payment,
+                  water_quality,
+                  quantity,
+                  source,
+                  waterpoint_type
+))
+
+# rm(tanz)
+
+# add variables from binned2 to modeling subset
+tanz_m <- left_join(x = tanz_m, y = binned2, by = 
+                      c("id"))
+
+length(unique(tanz_m$id))
+
+# fill in all blank entries with NA
+tanz_m[,][tanz_m[,] == ""] <- NA
+
+
+```
+
+# Now perform imputations as per original methods in tanz_dataexp.rmd
+
+## 1. amount_tsh
+
+```{r, eval = FALSE}
+# subset to get only non-zero construction year values
+atsh_sub <- subset(tanz_m, amount_tsh > 0)
+
+median(atsh_sub$amount_tsh) # overall median is 250
+
+# check median construction_year values by extraction_type
+etg_matsh <- arrange(summarise(group_by(atsh_sub, extraction_type_group), 
+                     MedAtsh = median(amount_tsh) ), desc(MedAtsh) )
+
+# etg_matsh
+
+# subset to get only non-zero construction year values
+atshz_sub <- subset(tanz_m, amount_tsh == 0)
+
+# add new variable to house imputed values
+tanz_m$amount_tsh_new <- tanz_m$amount_tsh
+
+# for each row in cyz_sub find the imputed value to use
+
+for (i in 1:nrow(atshz_sub)) {
+  # assign extraction_type median value
+  atshz_sub$amount_tsh[i] <- 
+    etg_matsh$MedAtsh[etg_matsh$extraction_type_group == atshz_sub$extraction_type_group[i]]
+} # end for i
+
+# put imputed vals into orig data
+tanz_m$amount_tsh_new[tanz_m$amount_tsh_new == 0] <- atshz_sub$amount_tsh
+
+# memory cleanup
+rm(atsh_sub, atshz_sub, etg_matsh)
+```
+
+
+## 2. gps_height
+
+```{r, eval = FALSE}
+# NOTE: THIS CODE CHUNK IS DISABLED FOR NOW
+
+# create a subset of non-zero gps_height records
+gh <- subset(tanz_m, gps_height != 0)
+nrow(gh) # 38,962 non-zero rows
+
+# check to ensure lack of zero vals for lat + long vars
+nrow(subset(gh, latitude > -1  & longitude == 0 ))
+
+# create a subset of gps_height == 0
+ghz <- subset(tanz_m, gps_height == 0)
+nrow(ghz) # 20,438 non-zero rows
+
+# fit a linear model for gps_height using latitude, longitude
+lm_gh <- lm(data = gh, gps_height ~ longitude + latitude)
+#summary(lm_gh)
+
+gpsh <- gh$gps_height
+#summary(gpsh)
+
+# now predict TARGET_AMT using model
+pred.ghz <- round(predict(lm_gh, newdata= ghz, type="response"))
+
+ghz$gps_height <- pred.ghz
+
+# add new variable to house imputed values
+tanz_m$gps_height_new <- tanz_m$gps_height
+
+# put imputed vals into orig data
+tanz_m$gps_height_new[tanz_m$gps_height_new == 0] <- pred.ghz
+
+# memory cleanup
+rm(gh, ghz, lm_gh, pred.ghz)
+```
+
+## 3. Population
+
+```{r, eval = FALSE}
+# median = 150
+summary(tanz_m$population[tanz_m$population > 0])
+
+# create new variable to house imputed population values
+tanz_m$population_new <- tanz_m$population
+
+tanz_m$population_new[tanz_m$population_new == 0] <- median(tanz_m$population[tanz_m$population > 0])
+
+#summary(tanz_m$population)
+
+#summary(tanz_m$population_new)
+```
+
+## 4. public_meeting
+
+```{r, eval = FALSE}
+
+# NOTE: the ward_meet_true and lga_meet_true data frames are built in the Data 
+# Exploration section for the public_meeting variable.
+
+# ------------------------------
+# ward_meet_true
+
+# c_ward contains the total number of wells by ward
+ward_tmp <- tanz_m[, c("id", "ward", "public_meeting")]
+
+# fill in NA's so data can be grouped properly
+ward_tmp$public_meeting[is.na(ward_tmp$public_meeting)] <- "unknown"
+
+# aggregate the data
+ward_meet_true <- arrange(summarise(group_by(ward_tmp, ward), 
+                               TotalWells = length(unique(id)),
+                               MeetUnk = sum(public_meeting == "unknown"),
+                     MeetTrue = sum(public_meeting == "TRUE") ), desc(TotalWells) )
+
+# calculate percentage of TRUE and unknown meeting values
+ward_meet_true$perc <- ward_meet_true$MeetTrue /  ward_meet_true$TotalWells
+ward_meet_true$unk_perc <- ward_meet_true$MeetUnk /  ward_meet_true$TotalWells
+
+# -------------------------------------------------------
+# lga_meet_true
+# memory cleanup
+rm(ward_tmp)
+
+# subset for fast aggregation
+lga_tmp <- tanz_m[, c("id", "lga", "public_meeting")]
+
+# fill in NA's so data can be grouped properly
+lga_tmp$public_meeting[is.na(lga_tmp$public_meeting)] <- "unknown"
+
+# aggregate the data
+lga_meet_true <- arrange(summarise(group_by(lga_tmp, lga), 
+                               TotalWells = length(unique(id)),
+                              MeetUnk = sum(public_meeting == "unknown"),
+                     MeetTrue = sum(public_meeting == "TRUE") ), desc(TotalWells) )
+
+# calculate percentage of TRUE and unknown meeting values
+lga_meet_true$perc <- lga_meet_true$MeetTrue /  lga_meet_true$TotalWells
+lga_meet_true$unk_perc <- lga_meet_true$MeetUnk /  lga_meet_true$TotalWells
+
+rm(lga_tmp)
+
+# ---------------------------------------------
+# subset to get only missing public_meeting values
+pmeet_sub <- subset(tanz_m, is.na(public_meeting))
+
+# add new variable to house imputed values
+tanz_m$public_meeting_new <- tanz_m$public_meeting
+
+# for each row in pmeet_sub find the imputed value to use
+for (i in 1:nrow(pmeet_sub)) {
+
+  # if the ward has valid public_meeting values, impute based on ward
+  if (ward_meet_true$unk_perc[ward_meet_true$ward == pmeet_sub$ward[i]] < 1) {
+
+    if (ward_meet_true$perc[ward_meet_true$ward == pmeet_sub$ward[i]] >= .50) {
+      pmeet_sub$public_meeting[i] <- "TRUE"
+    } else {
+      pmeet_sub$public_meeting[i] <- "FALSE"
+    }
+        
+  # else impute based on lga  
+  } else {
+
+    if (lga_meet_true$perc[lga_meet_true$lga == pmeet_sub$lga[i]] >= .50) {
+      pmeet_sub$public_meeting[i] <- "TRUE"
+    } else {
+      pmeet_sub$public_meeting[i] <- "FALSE"
+    }
+    
+  } # end else
+  
+} # end for i
+
+# put imputed vals into orig data
+tanz_m$public_meeting_new[is.na(tanz_m$public_meeting_new)] <- pmeet_sub$public_meeting
+
+######################################
+# sanity check - make sure no NA's remain
+# sum(is.na(tanz_m$public_meeting_new))
+
+# memory cleanup
+rm(pmeet_sub, ward_meet_true, lga_meet_true)
+```
+
+## 5. scheme_management
+
+```{r, eval = FALSE}
+# assign "unknown" to NA's. No need to create a new variable
+
+# put imputed vals into orig data
+tanz_m$scheme_management[is.na(tanz_m$scheme_management)] <- "unknown"
+```
+
+
+## 6. permit
+
+```{r, eval = FALSE}
+
+# NOTE: the ward_perm_true, lga_perm_true and reg_perm_true data frames are 
+# created within the Data Exploration narrative for the permit variable
+
+# --------------------------------------
+# ward_permit_true
+
+# c_ward contains the total number of wells by ward
+ward_tmp <- tanz_m[, c("id", "ward", "permit")]
+
+# fill in NA's so data can be grouped properly
+ward_tmp$permit[is.na(ward_tmp$permit)] <- "unknown"
+
+# aggregate the data
+ward_perm_true <- arrange(summarise(group_by(ward_tmp, ward), 
+                               TotalWells = length(unique(id)),
+                               PermUnk = sum(permit == "unknown"),
+                     PermTrue = sum(permit == "TRUE") ), desc(TotalWells) )
+
+# calculate percentage of TRUE and unknown meeting values
+ward_perm_true$perc <- ward_perm_true$PermTrue /  ward_perm_true$TotalWells
+ward_perm_true$unk_perc <- ward_perm_true$PermUnk /  ward_perm_true$TotalWells
+
+# --------------------------------------
+# lga_permit_true
+# memory cleanup
+rm(ward_tmp)
+
+# subset for fast aggregation
+lga_tmp <- tanz_m[, c("id", "lga", "permit")]
+
+# fill in NA's so data can be grouped properly
+lga_tmp$permit[is.na(lga_tmp$permit)] <- "unknown"
+
+# aggregate the data
+lga_perm_true <- arrange(summarise(group_by(lga_tmp, lga), 
+                               TotalWells = length(unique(id)),
+                              PermUnk = sum(permit == "unknown"),
+                     PermTrue = sum(permit == "TRUE") ), desc(TotalWells) )
+
+# calculate percentage of TRUE and unknown meeting values
+lga_perm_true$perc <- lga_perm_true$PermTrue /  lga_perm_true$TotalWells
+lga_perm_true$unk_perc <- lga_perm_true$PermUnk /  lga_perm_true$TotalWells
+
+# --------------------------------------
+# region_permit_true
+
+# memory cleanup
+rm(lga_tmp)
+
+# subset for fast aggregation
+reg_tmp <- tanz_m[, c("id", "region", "permit")]
+
+# fill in NA's so data can be grouped properly
+reg_tmp$permit[is.na(reg_tmp$permit)] <- "unknown"
+
+# aggregate the data
+reg_perm_true <- arrange(summarise(group_by(reg_tmp, region), 
+                               TotalWells = length(unique(id)),
+                              PermUnk = sum(permit == "unknown"),
+                     PermTrue = sum(permit == "TRUE") ), desc(TotalWells) )
+
+# calculate percentage of TRUE and unknown meeting values
+reg_perm_true$perc <- reg_perm_true$PermTrue /  reg_perm_true$TotalWells
+reg_perm_true$unk_perc <- reg_perm_true$PermUnk /  reg_perm_true$TotalWells
+
+# --------------------------------------
+
+
+
+# subset to get only missing permit values
+permit_sub <- subset(tanz_m, is.na(permit))
+
+# add new variable to house imputed values
+tanz_m$permit_new <- tanz_m$permit
+
+# for each row in pmeet_sub find the imputed value to use
+for (i in 1:nrow(permit_sub)) {
+  
+  # if the ward has valid permit values, impute based on lga
+  if (ward_perm_true$unk_perc[ward_perm_true$ward == permit_sub$ward[i]] < 1) {
+
+      if (ward_perm_true$perc[ward_perm_true$ward == permit_sub$ward[i]] >= .50) {
+        permit_sub$permit[i] <- "TRUE"
+      } else {
+        permit_sub$permit[i] <- "FALSE"
+      }
+        
+  # if the lga has valid permit values, impute based on lga
+  } else if (lga_perm_true$unk_perc[lga_perm_true$lga == permit_sub$lga[i]] < 1) {
+    
+      if (lga_perm_true$perc[lga_perm_true$lga == permit_sub$lga[i]] >= .50) {
+        permit_sub$permit[i] <- "TRUE"
+      } else {
+        permit_sub$permit[i] <- "FALSE"
+      }
+  
+  # else impute based on region
+  } else {
+
+    if (reg_perm_true$perc[reg_perm_true$region == permit_sub$region[i]] >= .50) {
+      permit_sub$permit[i] <- "TRUE"
+    } else {
+      permit_sub$permit[i] <- "FALSE"
+    }
+  } # end else
+  
+} # end for i
+
+# put imputed vals into orig data
+tanz_m$permit_new[is.na(tanz_m$permit_new)] <- permit_sub$permit
+
+######################################
+# sanity check
+sum(is.na(tanz_m$permit_new))
+
+# memory cleanup
+rm(ward_perm_true, lga_perm_true, reg_perm_true, permit_sub)
+```
+
+## 7. Construction_year
+
+```{r, eval = FALSE}
+# subset to get only non-zero construction year values
+cy_sub <- subset(tanz_m, construction_year > 0)
+
+median(cy_sub$construction_year) # overall median is 2000
+
+# check median construction_year values by extraction_type
+et_mcy <- arrange(summarise(group_by(cy_sub, extraction_type), 
+                     MedCy = median(construction_year) ), desc(MedCy) )
+
+# et_mcy
+
+# check median construction_year values by basin
+basin_mcy <- arrange(summarise(group_by(cy_sub, basin), 
+                     MedCy = median(construction_year) ), desc(MedCy) )
+
+# basin_mcy
+
+
+# subset to get only non-zero construction year values
+cyz_sub <- subset(tanz_m, construction_year == 0)
+
+# add new variable to house imputed values
+tanz_m$cons_yr_new <- tanz_m$construction_year
+
+# for each row in cyz_sub find the imputed value to use
+
+for (i in 1:nrow(cyz_sub)) {
+  
+  # get year value from date_recorded
+  yr_rec <- year(as.Date(cyz_sub$date_recorded[i], format = "%m/%d/%Y"))
+  
+  # get extraction_type median value
+  et_med <- et_mcy$MedCy[et_mcy$extraction_type == cyz_sub$extraction_type[i]]
+  # if there is no et_med value set it to yr_rec
+  if (length(et_med) == 0) {
+    et_med = yr_rec
+  }
+
+  # get basin median value
+  basin_med <- basin_mcy$MedCy[basin_mcy$basin == cyz_sub$basin[i]]
+  
+  # check median vals against each other + ensure median < year recorded
+  if (et_med > basin_med) {
+    
+    if((yr_rec < basin_med)) {
+      cyz_sub$construction_year[i] <- yr_rec
+    }
+    else {
+      # assign the older of the two medians to the zero value
+      cyz_sub$construction_year[i] <- basin_med
+    } # end if yr_rec
+      
+  } else {
+     if((yr_rec < et_med)) {
+      cyz_sub$construction_year[i] <- yr_rec
+     }
+    else {   
+      cyz_sub$construction_year[i] <- et_med
+    } # end if yr_rec
+     
+  } # end else
+  
+  
+} # end for i
+
+# put imputed vals into orig data
+tanz_m$cons_yr_new[tanz_m$cons_yr_new < 1] <- cyz_sub$construction_year
+
+# memory cleanup
+rm(cy_sub, cyz_sub, et_mcy, basin_mcy, et_med, basin_med, yr_rec)
+```
+
+## 8. Create pump_age variable
+
+```{r, eval = FALSE}
+# create new variable: well_age = year date recorded - construction_year (including imputed values)
+
+# get year value from date_recorded
+tmp_drec <- year(as.Date(tanz_m$date_recorded, format = "%m/%d/%Y"))
+
+# subtract new construction year values (imputations) from date recorded 'year' value
+tanz_m$pump_age <- tmp_drec - tanz_m$cons_yr_new
+
+# set any zero values to 1: new wells are considered to be 1 year old due to uncertainty
+tanz_m$pump_age[tanz_m$pump_age < 1] <- 1
+
+######################################
+# integrity checks
+
+# summary(tanz$pump_age)
+
+# summary(tanz$cons_yr_new)
+
+# tmp <- tanz[tanz$pump_age < 0,]
+
+rm(tmp_drec)
+```
+
+
+# remove cols that are no longer needed
+
+```{r}
+
+# subset tanz data set to include only those variables that are useful for modeling
+
+tanz_m <- subset (tanz_m, select = -c(
+                  amount_tsh,
+                  date_recorded, # for age variable computation
+                  gps_height,
+                  subvillage,
+                  lga,
+                  ward,
+                  population,
+                  public_meeting,
+                  
+                  permit,
+                  construction_year,
+                  cons_yr_new,
+                  
+                  # subvillage
+                  #    subvillage_freq_bin_1,
+                  #    subvillage_freq_bin_10,
+                  #    subvillage_freq_bin_11,
+                  #    subvillage_freq_bin_15,
+                  #    subvillage_freq_bin_2,
+                  #    subvillage_freq_bin_20,
+                  #    subvillage_freq_bin_3,
+                  #    subvillage_freq_bin_4,
+                  #    subvillage_freq_bin_5,
+                  #    subvillage_freq_bin_6,
+                  #    subvillage_freq_bin_7,
+                  #    subvillage_freq_bin_8,
+
+                 
+                  extraction_type_group # needed for amount_tsh imputation
+                  
+))
+```
+
+# write the new file to disk
+
+```{r}
+write.csv(tanz_m, file = "C:/data/698/tanz-submit-imps.csv", row.names = FALSE)
+```
+

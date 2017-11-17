@@ -1,0 +1,278 @@
+---
+title: "tanz-knn.Rmd"
+author: "James Topor"
+date: "November 3, 2017"
+output: html_document
+---
+
+## Read file from github
+
+```{r}
+tanz_m <- read.csv("https://raw.githubusercontent.com/jtopor/DDO-TNZ/master/tanz-imputations.csv", header = TRUE, stringsAsFactors = FALSE)
+```
+
+
+## Data Prep
+
+```{r}
+
+# convert categoricals to factors
+tanz_m$basin <- factor(tanz_m$basin)
+tanz_m$region <- factor(tanz_m$region)
+tanz_m$region_code <- factor(tanz_m$region_code)
+tanz_m$district_code <- factor(tanz_m$district_code)
+tanz_m$public_meeting_new <- factor(tanz_m$public_meeting_new)
+tanz_m$scheme_management <- factor(tanz_m$scheme_management)
+tanz_m$permit_new <- factor(tanz_m$permit_new)
+tanz_m$extraction_type <- factor(tanz_m$extraction_type)
+tanz_m$extraction_type_class <- factor(tanz_m$extraction_type_class)
+tanz_m$management <- factor(tanz_m$management)
+
+tanz_m$payment <- factor(tanz_m$payment)
+tanz_m$water_quality <- factor(tanz_m$water_quality)
+
+tanz_m$quantity <- factor(tanz_m$quantity)
+tanz_m$source <- factor(tanz_m$source)
+
+tanz_m$waterpoint_type <- factor(tanz_m$waterpoint_type)
+
+
+# convert labels to integers
+tanz_m$label[which(tanz_m$label == 'functional')] <- 0
+tanz_m$label[which(tanz_m$label == 'functional needs repair')] <- 1
+tanz_m$label[which(tanz_m$label == 'non functional')] <- 2
+
+tanz_m$label <- factor(tanz_m$label)
+
+library(caret)
+
+# split the Dataset in to train and validation subsets
+set.seed(3033)
+intrain <- createDataPartition(y = tanz_m$label, p= 0.7, list = FALSE)
+training <- tanz_m[intrain,]
+testing <- tanz_m[-intrain,]
+
+```
+
+Data is now prepped for model building.
+
+_____
+
+
+## Build a K-Nearest Neighbors model using caret package
+
+74.93% accurate
+
+
+```{r}
+
+# train a KNN model
+# trctrl <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+trctrl <- trainControl(method = "repeatedcv", number = 2, repeats = 1)
+set.seed(3333)
+
+knn_fit <- train(label ~                        
+quantity + waterpoint_type + extraction_type + pump_age + management +
+                      region_code + district_code + water_quality + payment +
+                      basin + source + scheme_management + latitude + longitude +
+                      public_meeting_new + permit_new + amount_tsh_new + 
+                      population_new +
+                      installer_0 +
+                      installer_cen +
+                      installer_ces +
+                      installer_com +
+                      installer_dan +
+                      installer_dis +
+                      installer_dwe +
+                      installer_fin +
+                      installer_gov +
+                      installer_hes +
+                      installer_kkk +
+                      installer_other +
+                      installer_rwe +
+                      installer_tcr +
+                      installer_unk +
+                      installer_wor +
+                      funder_dan +
+                      funder_dhv +
+                      funder_dis +
+                      funder_dws +
+                      funder_fin +
+                      funder_gov +
+                      funder_hes +
+                      funder_kkk +
+                      funder_other +
+                      funder_pri +
+                      funder_rws +
+                      funder_tas +
+                      funder_uni +
+                      funder_unk +
+                      funder_wat +
+                      funder_wor +
+                      lga_freq_bin_1 +
+                      lga_freq_bin_10 +
+                      lga_freq_bin_11 +
+                      lga_freq_bin_2 +
+                      lga_freq_bin_20 +
+                      lga_freq_bin_3 +
+                      lga_freq_bin_4 +
+                      lga_freq_bin_5 +
+                      lga_freq_bin_6 +
+                      lga_freq_bin_7 +
+                      lga_freq_bin_8 +
+                      lga_freq_bin_9 +
+                      ward_freq_bin_1 +
+                      ward_freq_bin_10 +
+                      ward_freq_bin_11 +
+                      ward_freq_bin_12 +
+                      ward_freq_bin_13 +
+                      ward_freq_bin_14 +
+                      ward_freq_bin_15 +
+                      ward_freq_bin_16 +
+                      ward_freq_bin_17 +
+                      ward_freq_bin_2 +
+                      ward_freq_bin_20 +
+                      ward_freq_bin_3 +
+                      ward_freq_bin_4 +
+                      ward_freq_bin_5 +
+                      ward_freq_bin_6 +
+                      ward_freq_bin_7 +
+                      ward_freq_bin_8 +
+                      ward_freq_bin_9,
+
+                      data = tanz_m, method = "knn",
+                      trControl=trctrl,
+                      preProcess = c("center", "scale"),
+                      tuneLength = 10
+        )
+
+# check results
+knn_fit
+
+# THis model scores 74.93% accuracy w k = 5 found as best k value 
+
+```
+
+k-Nearest Neighbors 
+
+41581 samples
+   80 predictor
+    3 classes: '0', '1', '2' 
+
+Pre-processing: centered (194), scaled (194) 
+Resampling: Cross-Validated (5 fold, repeated 1 times) 
+Summary of sample sizes: 33265, 33265, 33265, 33264, 33265 
+Resampling results across tuning parameters:
+
+  k   Accuracy   Kappa    
+   5  0.7455086  0.5250471
+   7  0.7420936  0.5158868
+   9  0.7372597  0.5046890
+  11  0.7347825  0.4987192
+  13  0.7314156  0.4910240
+  15  0.7279527  0.4829173
+  17  0.7238883  0.4742496
+  19  0.7216517  0.4694295
+  21  0.7206897  0.4667426
+  23  0.7196075  0.4635517
+
+Accuracy was used to select the optimal model using  the largest value.
+The final value used for the model was k = 5.
+
+```{r}
+# get predictions
+test_pred <- predict(knn_fit, newdata = tanz_m)
+# test_pred
+
+# check confusion matrix
+confusionMatrix(test_pred, tanz_m$label )
+
+# memory cleanup
+rm(test_pred)
+ 
+```
+
+Confusion Matrix and Statistics
+
+          Reference
+Prediction    0    1    2
+         0 8078  621 1837
+         1  310  418  154
+         2 1289  256 4856
+
+Overall Statistics
+                                          
+               Accuracy : 0.7493          
+                 95% CI : (0.7429, 0.7557)
+    No Information Rate : 0.5431          
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.5334          
+ Mcnemar's Test P-Value : < 2.2e-16       
+
+Statistics by Class:
+
+                     Class: 0 Class: 1 Class: 2
+Sensitivity            0.8348  0.32278   0.7092
+Specificity            0.6981  0.97192   0.8592
+Pos Pred Value         0.7667  0.47392   0.7586
+Neg Pred Value         0.7804  0.94822   0.8256
+Prevalence             0.5431  0.07268   0.3843
+Detection Rate         0.4533  0.02346   0.2725
+Detection Prevalence   0.5913  0.04950   0.3592
+Balanced Accuracy      0.7664  0.64735   0.7842
+
+
+
+## Make predictions for submit data set
+
+```{r}
+# 
+tanz_subm <- read.csv("https://raw.githubusercontent.com/jtopor/DDO-TNZ/master/tanz-submit-imps.csv", header = TRUE, stringsAsFactors = FALSE)
+
+# convert categoricals to factors
+tanz_subm$basin <- factor(tanz_subm$basin)
+tanz_subm$region <- factor(tanz_subm$region)
+tanz_subm$region_code <- factor(tanz_subm$region_code)
+tanz_subm$district_code <- factor(tanz_subm$district_code)
+tanz_subm$public_meeting_new <- factor(tanz_subm$public_meeting_new)
+tanz_subm$scheme_management <- factor(tanz_subm$scheme_management)
+
+tanz_subm$permit_new <- factor(tanz_subm$permit_new)
+tanz_subm$extraction_type <- factor(tanz_subm$extraction_type)
+tanz_subm$extraction_type_class <- factor(tanz_subm$extraction_type_class)
+tanz_subm$management <- factor(tanz_subm$management)
+
+tanz_subm$payment <- factor(tanz_subm$payment)
+tanz_subm$water_quality <- factor(tanz_subm$water_quality)
+
+tanz_subm$quantity <- factor(tanz_subm$quantity)
+tanz_subm$source <- factor(tanz_subm$source)
+
+tanz_subm$waterpoint_type <- factor(tanz_subm$waterpoint_type)
+
+
+# make predictions for the validation
+knnsub1 <- predict(knn_fit, tanz_subm)
+
+# add predictions to submit dataframe
+# add predictions to submit dataframe
+tanz_subm$status_group <- as.character(knnsub1)
+
+# convert integer labels to corresponding text
+tanz_subm$status_group[which(tanz_subm$status_group == '0')] <- 'functional'
+tanz_subm$status_group[which(tanz_subm$status_group == '1')] <- 'functional needs repair'
+tanz_subm$status_group[which(tanz_subm$status_group == '2')] <- 'non functional'
+
+# write id + status_group cols to a file for submission
+
+knn_preds <- cbind(tanz_subm$id, tanz_subm$status_group)
+colnames(knn_preds) <- c("id", "status_group")
+
+
+write.csv(knn_preds, file = "C:/data/698/knn_preds.csv", row.names = FALSE)
+
+rm(knn_preds, knnsub1)
+
+```
+

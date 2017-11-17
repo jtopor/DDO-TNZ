@@ -1,0 +1,364 @@
+---
+title: "tanz-randomForest"
+author: "James Topor"
+date: "November 3, 2017"
+output: html_document
+---
+
+## Read file from github
+
+```{r}
+tanz_m <- read.csv("https://raw.githubusercontent.com/jtopor/DDO-TNZ/master/tanz-imputations.csv", header = TRUE, stringsAsFactors = FALSE)
+```
+
+
+## Data Prep
+
+```{r}
+
+# convert categoricals to factors
+tanz_m$basin <- factor(tanz_m$basin)
+tanz_m$region <- factor(tanz_m$region)
+tanz_m$region_code <- factor(tanz_m$region_code)
+tanz_m$district_code <- factor(tanz_m$district_code)
+tanz_m$public_meeting_new <- factor(tanz_m$public_meeting_new)
+
+# special edit to make scheme_management usable
+tanz_m$scheme_management[which(tanz_m$scheme_management == 'None')] <- 'Other'
+tanz_m$scheme_management <- factor(tanz_m$scheme_management)
+
+tanz_m$permit_new <- factor(tanz_m$permit_new)
+tanz_m$extraction_type <- factor(tanz_m$extraction_type)
+tanz_m$extraction_type_class <- factor(tanz_m$extraction_type_class)
+tanz_m$management <- factor(tanz_m$management)
+
+tanz_m$payment <- factor(tanz_m$payment)
+tanz_m$water_quality <- factor(tanz_m$water_quality)
+
+tanz_m$quantity <- factor(tanz_m$quantity)
+tanz_m$source <- factor(tanz_m$source)
+
+tanz_m$waterpoint_type <- factor(tanz_m$waterpoint_type)
+
+
+# convert labels to integers
+tanz_m$label[which(tanz_m$label == 'functional')] <- 0
+tanz_m$label[which(tanz_m$label == 'functional needs repair')] <- 1
+tanz_m$label[which(tanz_m$label == 'non functional')] <- 2
+
+tanz_m$label <- factor(tanz_m$label)
+
+library(caret)
+
+# split the Dataset in to train and validation subsets
+set.seed(3033)
+intrain <- createDataPartition(y = tanz_m$label, p= 0.7, list = FALSE)
+training <- tanz_m[intrain,]
+testing <- tanz_m[-intrain,]
+
+```
+
+Data is now prepped for model building.
+
+_____
+
+## Build a random forest
+
+81.13% accuracy
+
+```{r}
+library(randomForest)
+
+# NOTE: variables were modified due to incompatibility w submit data. region
+# replaces region_code; extraction_type_class replaces extraction_type; 
+# scheme_management 'None' values were set to 'Other'
+rf_mod <- randomForest(label ~                        
+quantity + waterpoint_type + extraction_type_class + pump_age + management +
+                      region + district_code + water_quality + payment +
+                      basin + source + scheme_management + latitude + longitude +
+                      public_meeting_new + permit_new + amount_tsh_new + 
+                      population_new +
+                      installer_0 +
+                      installer_cen +
+                      installer_ces +
+                      installer_com +
+                      installer_dan +
+                      installer_dis +
+                      installer_dwe +
+                      installer_fin +
+                      installer_gov +
+                      installer_hes +
+                      installer_kkk +
+                      installer_other +
+                      installer_rwe +
+                      installer_tcr +
+                      installer_unk +
+                      installer_wor +
+                      funder_dan +
+                      funder_dhv +
+                      funder_dis +
+                      funder_dws +
+                      funder_fin +
+                      funder_gov +
+                      funder_hes +
+                      funder_kkk +
+                      funder_other +
+                      funder_pri +
+                      funder_rws +
+                      funder_tas +
+                      funder_uni +
+                      funder_unk +
+                      funder_wat +
+                      funder_wor +
+                      lga_freq_bin_1 +
+                      lga_freq_bin_10 +
+                      lga_freq_bin_11 +
+                      lga_freq_bin_2 +
+                      lga_freq_bin_20 +
+                      lga_freq_bin_3 +
+                      lga_freq_bin_4 +
+                      lga_freq_bin_5 +
+                      lga_freq_bin_6 +
+                      lga_freq_bin_7 +
+                      lga_freq_bin_8 +
+                      lga_freq_bin_9 +
+                      ward_freq_bin_1 +
+                      ward_freq_bin_10 +
+                      ward_freq_bin_11 +
+                      ward_freq_bin_12 +
+                      ward_freq_bin_13 +
+                      ward_freq_bin_14 +
+                      ward_freq_bin_15 +
+                      ward_freq_bin_16 +
+                      ward_freq_bin_17 +
+                      ward_freq_bin_2 +
+                      ward_freq_bin_20 +
+                      ward_freq_bin_3 +
+                      ward_freq_bin_4 +
+                      ward_freq_bin_5 +
+                      ward_freq_bin_6 +
+                      ward_freq_bin_7 +
+                      ward_freq_bin_8 +
+                      ward_freq_bin_9 +
+
+                      subvillage_freq_bin_1 +
+                      subvillage_freq_bin_10 +
+                      subvillage_freq_bin_11 +
+                      subvillage_freq_bin_15 +
+                      subvillage_freq_bin_2 +
+                      subvillage_freq_bin_20 +
+                      subvillage_freq_bin_3 +
+                      subvillage_freq_bin_4 +
+                      subvillage_freq_bin_5 +
+                      subvillage_freq_bin_6 +
+                      subvillage_freq_bin_7 +
+                      subvillage_freq_bin_8 +
+                      gps_height_new,
+
+                  ntree =700,
+
+              #   data = training)
+               data = tanz_m)
+
+# summary(rf_mod)
+
+# remove the response variable from the validation subset
+# rf_testing <- subset(testing, select = -c(label))
+rf_testing <- subset(tanz_m, select = -c(label))
+
+# make predictions for the validation
+rf1 <- predict(rf_mod, rf_testing)
+
+# confusion matrix - validation subset
+# rf_tab <- table(rf1, testing$label)
+rf_tab <- table(rf1, tanz_m$label)
+
+# display: off-diag numbers are mis-classifications
+confusionMatrix(rf_tab)
+
+# memory cleanup
+rm(rf1, rf_testing, rf_tab)
+```
+
+## Confusion Matrix and Statistics
+
+   
+Confusion Matrix and Statistics
+
+   
+rf1     0     1     2
+  0 31467  1567  2394
+  1   184  2471   144
+  2   608   279 20286
+
+Overall Statistics
+                                          
+               Accuracy : 0.9129          
+                 95% CI : (0.9106, 0.9151)
+    No Information Rate : 0.5431          
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.8373          
+ Mcnemar's Test P-Value : < 2.2e-16       
+
+Statistics by Class:
+
+                     Class: 0 Class: 1 Class: 2
+Sensitivity            0.9754  0.57239   0.8888
+Specificity            0.8541  0.99405   0.9757
+Pos Pred Value         0.8882  0.88282   0.9581
+Neg Pred Value         0.9670  0.96739   0.9336
+Prevalence             0.5431  0.07268   0.3842
+Detection Rate         0.5297  0.04160   0.3415
+Detection Prevalence   0.5964  0.04712   0.3564
+Balanced Accuracy      0.9148  0.78322   0.9323
+
+_____
+
+## Check variable importance:
+
+```{r}
+importance <- varImp(rf_mod)
+
+importance <- importance[order(importance$Overall,decreasing = TRUE), ,drop = FALSE]
+
+print(importance)
+
+# memory cleanup
+rm(rf1, rf_testing, rf_tab)
+```
+
+                       Overall
+quantity           2386.462153
+longitude          1280.208366
+latitude           1243.581667
+extraction_type    1178.682671
+pump_age           1116.002314
+waterpoint_type    1093.158956
+payment             816.229526
+region_code         681.391666
+population_new      661.159021
+source              578.178014
+district_code       555.321904
+basin               427.311991
+scheme_management   384.212795
+management          372.834456
+amount_tsh_new      345.614271
+water_quality       299.133328
+funder_other        153.621007
+ward_freq_bin_3     149.327702
+ward_freq_bin_2     142.580870
+funder_gov          135.037070
+installer_other     132.631561
+installer_dwe       123.834254
+permit_new          121.603216
+ward_freq_bin_4     110.478197
+public_meeting_new  108.145648
+ward_freq_bin_1     102.555506
+ward_freq_bin_5      89.906952
+lga_freq_bin_4       80.632662
+lga_freq_bin_3       78.191339
+lga_freq_bin_6       74.982971
+lga_freq_bin_5       71.640857
+lga_freq_bin_10      61.760992
+lga_freq_bin_2       61.629666
+lga_freq_bin_7       60.363336
+installer_gov        58.517909
+ward_freq_bin_6      57.437098
+installer_cen        57.360212
+funder_wor           57.045224
+installer_rwe        54.030158
+lga_freq_bin_9       49.896391
+ward_freq_bin_7      49.652331
+ward_freq_bin_8      48.296252
+funder_dan           39.977137
+installer_unk        37.709373
+lga_freq_bin_8       37.567692
+funder_hes           36.508775
+lga_freq_bin_20      35.405233
+installer_dis        35.347900
+funder_unk           34.678247
+installer_com        34.384736
+funder_tas           33.928214
+funder_dws           31.883431
+funder_pri           29.892122
+funder_uni           25.143246
+ward_freq_bin_9      24.503300
+funder_wat           24.246632
+installer_wor        23.716591
+funder_rws           22.778945
+installer_hes        20.582274
+funder_dis           18.413152
+installer_tcr        18.133932
+installer_dan        17.600180
+funder_kkk           17.576963
+installer_fin        15.507702
+lga_freq_bin_11      14.531972
+installer_kkk        14.371995
+funder_fin           14.235434
+lga_freq_bin_1       14.198987
+funder_dhv           13.691042
+ward_freq_bin_10     10.414861
+ward_freq_bin_14      9.585436
+ward_freq_bin_13      9.147670
+installer_0           7.232043
+ward_freq_bin_12      6.411819
+ward_freq_bin_16      5.501362
+installer_ces         5.378000
+ward_freq_bin_11      3.980340
+ward_freq_bin_15      3.305827
+ward_freq_bin_20      2.600001
+ward_freq_bin_17      2.306922
+
+## Make predictions for submit data set
+
+```{r}
+# 
+tanz_subm <- read.csv("https://raw.githubusercontent.com/jtopor/DDO-TNZ/master/tanz-submit-imps.csv", header = TRUE, stringsAsFactors = FALSE)
+
+# convert categoricals to factors
+tanz_subm$basin <- factor(tanz_subm$basin)
+tanz_subm$region <- factor(tanz_subm$region)
+tanz_subm$region_code <- factor(tanz_subm$region_code)
+tanz_subm$district_code <- factor(tanz_subm$district_code)
+tanz_subm$public_meeting_new <- factor(tanz_subm$public_meeting_new)
+tanz_subm$scheme_management <- factor(tanz_subm$scheme_management)
+
+tanz_subm$permit_new <- factor(tanz_subm$permit_new)
+tanz_subm$extraction_type <- factor(tanz_subm$extraction_type)
+tanz_subm$extraction_type_class <- factor(tanz_subm$extraction_type_class)
+tanz_subm$management <- factor(tanz_subm$management)
+
+tanz_subm$payment <- factor(tanz_subm$payment)
+tanz_subm$water_quality <- factor(tanz_subm$water_quality)
+
+tanz_subm$quantity <- factor(tanz_subm$quantity)
+tanz_subm$source <- factor(tanz_subm$source)
+
+tanz_subm$waterpoint_type <- factor(tanz_subm$waterpoint_type)
+
+
+# make predictions for the validation
+rfsub1 <- predict(rf_mod, tanz_subm)
+
+# add predictions to submit dataframe
+# add predictions to submit dataframe
+tanz_subm$status_group <- as.character(rfsub1)
+
+# convert integer labels to corresponding text
+tanz_subm$status_group[which(tanz_subm$status_group == '0')] <- 'functional'
+tanz_subm$status_group[which(tanz_subm$status_group == '1')] <- 'functional needs repair'
+tanz_subm$status_group[which(tanz_subm$status_group == '2')] <- 'non functional'
+
+# write id + status_group cols to a file for submission
+
+rf_preds <- cbind(tanz_subm$id, tanz_subm$status_group)
+colnames(rf_preds) <- c("id", "status_group")
+
+
+write.csv(rf_preds, file = "C:/data/698/rf_preds.csv", row.names = FALSE)
+
+rm(rf_preds, rfsub1)
+
+```
+
